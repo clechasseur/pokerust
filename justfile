@@ -38,11 +38,11 @@ fmt:
 check:
     {{cargo}} check --workspace --all-targets --all-features
 
-build:
-    {{cargo}} build --workspace --all-targets --all-features
+build *extra_args:
+    {{cargo}} build --workspace --all-targets --all-features {{extra_args}}
 
-test:
-    {{cargo}} test --workspace --all-features
+test *extra_args:
+    {{cargo}} test --workspace --all-features {{extra_args}}
 
 tarpaulin:
     {{cargo}} tarpaulin --target-dir target-tarpaulin
