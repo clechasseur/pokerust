@@ -1,0 +1,238 @@
+name: CI
+
+on:
+  # TODO re-enable once project is set up properly
+  #push:
+  workflow_dispatch:
+
+env:
+  CI: 1
+
+jobs:
+  clippy:
+    name: Clippy validation${{ matrix.all-features && ' with all features' || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        all-features: [ false ] # TODO if your crate has optional features, add 'true' to this list
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust with clippy
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Output Rust toolchain info
+        run: |
+          cargo --version --verbose
+          rustc --version
+          cargo clippy --version
+
+      - name: Run clippy
+        uses: clechasseur/rs-clippy-check@v3
+        with:
+          args: --workspace --all-targets ${{ matrix.all-features && '--all-features' || '' }} -- -D warnings
+
+  fmt:
+    name: Rustfmt check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly with rustfmt
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
+
+      - name: Output Rust toolchain info
+        run: |
+          cargo +nightly --version --verbose
+          rustc +nightly --version
+          cargo +nightly fmt --version
+
+      - name: Run Rustfmt
+        uses: clechasseur/rs-fmt-check@v2
+        with:
+          args: --all
+
+  build-msrv:
+    name: MSRV build for Rust ${{ matrix.toolchain }} on ${{ matrix.os }}${{ matrix.all-features && ' with all features' || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [ 1.60.0 ] # TODO: change for your minimum supported Rust version
+        os: [ ubuntu, macos, windows ]
+        all-features: [ false ] # TODO if your crate has optional features, add 'true' to this list
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+
+      - name: Install just
+        uses: extractions/setup-just@v1
+
+      - name: Output Rust toolchain info
+        run: |
+          cargo --version --verbose
+          rustc --version
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1-rust
+          key: all-features-${{ matrix.all-features }}-msrv-cargo-files-${{ hashFiles('**/Cargo.*.msrv') }}
+
+      - name: Check if we need to install MSRV cargo files
+        id: check_msrv_cargo_files
+        uses: andstor/file-existence-action@v2
+        with:
+          files: "Cargo.lock.msrv, Cargo.toml.msrv"
+
+      - name: Install MSRV cargo files
+        if: ${{ steps.check_msrv_cargo_files.outputs.files_exists == 'true' }}
+        run: just pre-msrv
+
+      - name: Run checks
+        uses: clechasseur/rs-cargo@v2
+        with:
+          command: check
+          args: --workspace --lib --bins ${{ matrix.all-features && '--all-features' || '' }}
+
+  build:
+    name: Build for Rust ${{ matrix.toolchain }}${{ matrix.experimental && ' (experimental)' || '' }} on ${{ matrix.os }}${{ matrix.ignore-lock && ' without Cargo.lock' || '' }}${{ matrix.all-features && ' with all features' || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [ 1.68.2, stable, beta, nightly ] # TODO: change 1.68.2 for your minimum supported Rust version
+        os: [ ubuntu, macos, windows ]
+        ignore-lock: [ false, true ]
+        all-features: [ false ] # TODO if your crate has optional features, add 'true' to this list
+        include:
+          - experimental: false
+          - toolchain: beta
+            experimental: true
+          - toolchain: nightly
+            experimental: true
+    runs-on: ${{ matrix.os }}-latest
+    continue-on-error: ${{ matrix.experimental }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Remove Cargo.lock
+        if: ${{ matrix.ignore-lock }}
+        run: rm Cargo.lock
+
+      - name: Install Rust toolchain ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+
+      - name: Output Rust toolchain info
+        run: |
+          cargo --version --verbose
+          rustc --version
+
+      - name: Rust Cache
+        if: ${{ !matrix.experimental }}
+        uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v1-rust
+          key: ignore-lock-${{ matrix.ignore-lock }}-all-features-${{ matrix.all-features }}
+
+      - name: Run checks
+        uses: clechasseur/rs-cargo@v2
+        with:
+          command: check
+          args: --workspace --all-targets ${{ matrix.all-features && '--all-features' || '' }}
+  
+      - name: Run tests
+        uses: clechasseur/rs-cargo@v2
+        with:
+          command: test
+          args: --workspace ${{ matrix.all-features && '--all-features' || '' }}
+
+  tarpaulin:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: false
+
+      - name: Run cargo-tarpaulin
+        uses: clechasseur/rs-cargo@v2
+        with:
+          command: tarpaulin
+
+      - name: Upload code coverage results to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage-report
+          path: |
+            cobertura.xml
+            tarpaulin-report.html
+
+  doc:
+    name: Rustdoc check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Run rustdoc
+        uses: clechasseur/rs-cargo@v2
+        with:
+          command: doc
+          args: --workspace --all-features
+
+  publish-dry-run:
+    name: Publish dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: false
+
+      - name: Perform publish dry-run
+        uses: clechasseur/rs-cargo@v2
+        with:
+          command: publish
+          args: --dry-run

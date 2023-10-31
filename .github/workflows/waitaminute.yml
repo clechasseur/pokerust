@@ -1,0 +1,13 @@
+name: Remove approvals when PR diff changes
+
+on:
+  pull_request:
+    types: [ opened, edited, synchronize ]
+    branches:
+      - main
+
+jobs:
+  waitaminute:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: petalmd/waitaminute@v2
