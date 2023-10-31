@@ -1,0 +1,89 @@
+version: '3.9'
+
+networks:
+  pokedex-net:
+    driver: bridge
+
+volumes:
+  pokedex-postgres-data:
+  pokedex-postgres-test-data:
+
+x-base-service-env: &base-service-env
+  DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pokedex-db:5432/pokedex"
+
+x-base-service: &base-service
+  build:
+    context: .
+    target: final
+    args:
+      - RUST_VERSION
+      - RUST_TOOLCHAIN
+  image: clechasseur/pokerust:${RUST_TAG:-1.73.0}
+  depends_on:
+    pokedex-db:
+      condition: service_healthy
+  stdin_open: true
+  tty: true
+  networks:
+    - pokedex-net
+  env_file: .env
+  environment:
+    <<: *base-service-env
+
+services:
+  pokedex-db:
+    image: postgres:15
+    volumes:
+      - pokedex-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - pokedex-net
+    env_file: .env
+    environment:
+      POSTGRES_DB: pokedex
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready --username=$POSTGRES_USER --dbname=pokedex" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pokedex-db-test:
+    image: postgres:15
+    volumes:
+      - pokedex-postgres-test-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - pokedex-net
+    env_file: .env
+    environment:
+      POSTGRES_DB: pokedex-test
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready --username=$POSTGRES_USER --dbname=pokedex-test" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pokedex:
+    <<: *base-service
+    profiles:
+      - serve
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *base-service-env
+      POKEDEX_ENV: production
+      HTTP_ADDR: "0.0.0.0"
+
+  pokedex-migrate:
+    <<: *base-service
+    profiles:
+      - migrate
+    command: ['/bin/run_migrations']
+
+  pokedex-seed:
+    <<: *base-service
+    profiles:
+      - seed
+    command: ['/bin/seed_db']

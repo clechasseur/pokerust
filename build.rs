@@ -1,18 +1,16 @@
-use std::env;
+//! Pokedex build script.
 
-// use rustc_version::version_meta;
-// use rustc_version::Channel::Nightly;
+use rustc_version::version_meta;
+use rustc_version::Channel::Nightly;
 
+#[doc(hidden)]
 fn main() {
-    println!("cargo:rerun-if-env-changed=CI");
+    // If migrations change on disk, we want to rebuild the `run_migrations` binary.
+    println!("cargo:rerun-if-changed=migrations");
 
-    // Uncomment this to be notified when we're building on Nightly toolset
-    // if version_meta().unwrap().channel <= Nightly {
-    //     println!("cargo:rustc-cfg=nightly_rustc");
-    // }
-
-    // On CI, do not run integration tests.
-    if env::var("CI").is_ok() {
-        println!("cargo:rustc-cfg=skip_integration_tests")
+    // Backtrace exists in stable, but to use it with std::error::Error,
+    // we need to be on the Nightly channel at least.
+    if version_meta().unwrap().channel <= Nightly {
+        println!("cargo:rustc-cfg=backtrace_support");
     }
 }

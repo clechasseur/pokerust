@@ -1,9 +1,6 @@
 name: CI
 
-on:
-  # TODO re-enable once project is set up properly
-  #push:
-  workflow_dispatch:
+on: [ push ]
 
 env:
   CI: 1
@@ -14,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        all-features: [ false ] # TODO if your crate has optional features, add 'true' to this list
+        all-features: [ false ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -64,9 +61,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolchain: [ 1.60.0 ] # TODO: change for your minimum supported Rust version
-        os: [ ubuntu, macos, windows ]
-        all-features: [ false ] # TODO if your crate has optional features, add 'true' to this list
+        toolchain: [ 1.68.2 ]
+        os: [ ubuntu ]
+        all-features: [ false ]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Checkout code
@@ -112,14 +109,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        toolchain: [ 1.68.2, stable, beta, nightly ] # TODO: change 1.68.2 for your minimum supported Rust version
-        os: [ ubuntu, macos, windows ]
-        ignore-lock: [ false, true ]
-        all-features: [ false ] # TODO if your crate has optional features, add 'true' to this list
+        toolchain: [ 1.68.2, stable, nightly ]
+        os: [ ubuntu ]
+        ignore-lock: [ false ]
+        all-features: [ false ]
         include:
           - experimental: false
-          - toolchain: beta
-            experimental: true
           - toolchain: nightly
             experimental: true
     runs-on: ${{ matrix.os }}-latest
@@ -149,12 +144,23 @@ jobs:
           prefix-key: v1-rust
           key: ignore-lock-${{ matrix.ignore-lock }}-all-features-${{ matrix.all-features }}
 
+      - name: Start DB containers
+        uses: isbang/compose-action@v1.5.1
+        with:
+          down-flags: "--volumes"
+
+      - name: Run DB migrations
+        uses: clechasseur/rs-cargo@v2
+        with:
+          command: run
+          args: --bin run_migrations
+
       - name: Run checks
         uses: clechasseur/rs-cargo@v2
         with:
           command: check
           args: --workspace --all-targets ${{ matrix.all-features && '--all-features' || '' }}
-  
+
       - name: Run tests
         uses: clechasseur/rs-cargo@v2
         with:
@@ -180,6 +186,17 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-targets: false
+
+      - name: Start DB containers
+        uses: isbang/compose-action@v1.5.1
+        with:
+          down-flags: "--volumes"
+
+      - name: Run DB migrations
+        uses: clechasseur/rs-cargo@v2
+        with:
+          command: run
+          args: --bin run_migrations
 
       - name: Run cargo-tarpaulin
         uses: clechasseur/rs-cargo@v2
@@ -236,3 +253,28 @@ jobs:
         with:
           command: publish
           args: --dry-run
+
+  docker-image:
+    name: Build Docker image for Rust ${{ matrix.toolchain }}${{ matrix.experimental && ' (experimental)' || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [ stable, nightly ]
+        include:
+          - experimental: false
+          - toolchain: nightly
+            experimental: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          target: final
+          push: false
+          tags: clechasseur/pokerust:ci
+          build-args: RUST_TOOLCHAIN=${{ matrix.toolchain }}
+          cache-from: ${{ matrix.experimental && 'type=inline' || 'type=gha' }}
+          cache-to: ${{ matrix.experimental && 'type=inline' || 'type=gha,mode=max' }}

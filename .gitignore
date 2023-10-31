@@ -12,8 +12,12 @@ target-tarpaulin/
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
 
-# Don't publish the .idea folder from IntelliJ
+# Don't publish the IDE folders
 .idea/
+.vscode/
+
+# docker-compose.override.yml is meant to be local-only
+docker-compose.override.yml
 
 # Don't publish the .vscode folder from VS Code
 .vscode/

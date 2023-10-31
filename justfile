@@ -1,8 +1,31 @@
 set windows-shell := ["powershell.exe", "-NoLogo", "-Command"]
 
-default_toolchain := ''
+toolchain := ''
+trimmed_toolchain := trim(toolchain)
 
-default: test
+cargo := if trimmed_toolchain != "" {
+    "cargo +" + trimmed_toolchain
+} else {
+    "cargo"
+}
+
+docker-compose-build := if trimmed_toolchain == "nightly" {
+    "RUST_TAG=nightly docker compose build --build-arg RUST_TOOLCHAIN=nightly"
+} else if trimmed_toolchain != "" {
+    "RUST_TAG=" + trimmed_toolchain + " docker compose build --build-arg RUST_VERSION=" + trimmed_toolchain
+} else {
+    "docker compose build"
+}
+docker-compose-run := if trimmed_toolchain == "nightly" {
+  "RUST_TAG=nightly docker compose run --env RUST_TOOLCHAIN=nightly"
+} else if trimmed_toolchain != "" {
+  "RUST_TAG=" + trimmed_toolchain + " docker compose run --env RUST_VERSION=" + trimmed_toolchain
+} else {
+  "docker compose run"
+}
+
+default:
+    @just --list
 
 tidy: clippy fmt
 
@@ -12,17 +35,17 @@ clippy:
 fmt:
     cargo +nightly fmt --all
 
-check toolchain=default_toolchain:
-    cargo {{toolchain}} check --workspace --all-targets --all-features
+check:
+    {{cargo}} check --workspace --all-targets --all-features
 
-build toolchain=default_toolchain:
-    cargo {{toolchain}} build --workspace --all-targets --all-features
+build:
+    {{cargo}} build --workspace --all-targets --all-features
 
-test toolchain=default_toolchain:
-    cargo {{toolchain}} test --workspace --all-features
+test:
+    {{cargo}} test --workspace --all-features
 
-tarpaulin toolchain=default_toolchain:
-    cargo {{toolchain}} tarpaulin --target-dir target-tarpaulin
+tarpaulin:
+    {{cargo}} tarpaulin --target-dir target-tarpaulin
 
 pre-msrv:
     mv Cargo.toml Cargo.toml.bak
@@ -43,3 +66,31 @@ msrv:
 
 doc:
     cargo +nightly doc --workspace --all-features --open
+
+test-package:
+    {{cargo}} publish --dry-run
+
+migrate:
+    cargo run --bin run_migrations
+
+seed:
+    cargo run --bin seed_db
+
+serve:
+    {{cargo}} run
+
+db command:
+    docker compose {{ if command == "up" { 'up -d' } else { command } }}
+
+docker-build *extra_args:
+    {{docker-compose-build}} {{extra_args}} pokedex
+    -docker rmi $(docker images -f "dangling=true" -q)
+
+docker-migrate *extra_args:
+    {{docker-compose-run}} {{extra_args}} --rm pokedex-migrate
+
+docker-seed *extra_args:
+    {{docker-compose-run}} {{extra_args}} --rm pokedex-seed
+
+docker-serve *extra_args:
+    {{docker-compose-run}} {{extra_args}} --service-ports --rm pokedex
