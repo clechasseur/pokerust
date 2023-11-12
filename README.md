@@ -99,7 +99,7 @@ This will launch the web application server, listening locally on port 8080. You
 including one indicating that the server has been successfully started:
 
 ```
-[2023-10-29T03:38:50Z INFO  pokedex] Pokedex server started in Production! Listening on 0.0.0.0:8080.
+[2023-10-29T03:38:50Z INFO  pokedex_rs] Pokedex server started in Production! Listening on 0.0.0.0:8080.
 ```
 
 Afterwards, the API can be accessed at [`/api/v1/pokemons`](http://localhost:8080/api/v1/pokemons). It is also possible
@@ -176,7 +176,7 @@ This will launch the application server locally. As before, it is then accessibl
 If you check the console log, you might notice that running the server locally starts it in `Development` mode:
 
 ```
-[2023-10-29T04:16:21Z INFO  pokedex] Pokedex server started in Development! Listening on 127.0.0.1:8080.
+[2023-10-29T04:16:21Z INFO  pokedex_rs] Pokedex server started in Development! Listening on 127.0.0.1:8080.
 ```
 
 This affects the content of error messages returned by the API (see below).
@@ -298,8 +298,8 @@ This will build and run the app using the Nightly Rust toolchain and also enable
 can be verified in the server logs:
 
 ```
-[2023-10-29T04:56:08Z INFO  pokedex] Rust version used: 1.75.0-nightly
-[2023-10-29T04:56:08Z INFO  pokedex] Backtrace support: supported
+[2023-10-29T04:56:08Z INFO  pokedex_rs] Rust version used: 1.75.0-nightly
+[2023-10-29T04:56:08Z INFO  pokedex_rs] Backtrace support: supported
 ```
 
 The inclusion of a backtrace with errors can be tested by sending an invalid query to the API:
