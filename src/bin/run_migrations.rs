@@ -11,8 +11,8 @@ use diesel::{Connection, ConnectionError};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use log::{info, trace};
 use once_cell::sync::Lazy;
-use pokedex::db::{get_db_url, Backend, SyncConnection};
-use pokedex::helpers::env::load_optional_dotenv;
+use pokedex_rs::db::{get_db_url, Backend, SyncConnection};
+use pokedex_rs::helpers::env::load_optional_dotenv;
 use regex::Regex;
 use simple_logger::SimpleLogger;
 

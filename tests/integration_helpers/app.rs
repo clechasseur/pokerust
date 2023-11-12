@@ -3,15 +3,15 @@ use std::sync::Once;
 
 use diesel::{delete, Connection, RunQueryDsl};
 use log::{debug, trace};
-use pokedex::db::{get_db_url, get_pool, Pool, PooledConnection, SyncConnection};
-use pokedex::helpers::env::load_optional_dotenv;
+use pokedex_rs::db::{get_db_url, get_pool, Pool, PooledConnection, SyncConnection};
+use pokedex_rs::helpers::env::load_optional_dotenv;
 
 #[macro_export]
 macro_rules! init_test_service {
     ($app_var:ident, $service_var:ident) => {
         let $app_var = $crate::integration_helpers::app::TestApp::new();
         let $service_var =
-            actix_web::test::init_service(pokedex::pokedex_app!($app_var.get_pool())).await;
+            actix_web::test::init_service(pokedex_rs::pokedex_app!($app_var.get_pool())).await;
     };
 }
 
@@ -51,7 +51,7 @@ impl TestApp {
 
 impl Drop for TestApp {
     fn drop(&mut self) {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         debug!("Connecting to test DB to perform cleanup");
         let db_url = get_db_url().unwrap();

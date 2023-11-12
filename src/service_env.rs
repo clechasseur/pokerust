@@ -42,7 +42,7 @@ impl ServiceEnv {
     ///
     /// ```no_run
     /// use log::info;
-    /// use pokedex::service_env::ServiceEnv;
+    /// use pokedex_rs::service_env::ServiceEnv;
     ///
     /// // Can be converted to a string for logging
     /// info!("Service is running in {}", ServiceEnv::current());
@@ -91,7 +91,7 @@ impl ServiceEnv {
     /// # Examples
     ///
     /// ```ignore
-    /// use pokedex::service_env::ServiceEnv;
+    /// use pokedex_rs::service_env::ServiceEnv;
     ///
     /// # async fn example() {
     /// ServiceEnv::test(ServiceEnv::Development, async {

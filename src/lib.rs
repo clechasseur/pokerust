@@ -48,8 +48,8 @@ use crate::db::Pool;
 ///
 /// ```no_run
 /// # use actix_web::{HttpResponse, web};
-/// # use pokedex::db::get_pool;
-/// # use pokedex::pokedex_app;
+/// # use pokedex_rs::db::get_pool;
+/// # use pokedex_rs::pokedex_app;
 /// #
 /// # let pool = get_pool().unwrap();
 /// // let pool = ...;

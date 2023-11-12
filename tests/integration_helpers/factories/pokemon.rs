@@ -1,4 +1,4 @@
-use pokedex::models::pokemon::{CreatePokemon, PatchPokemon, UpdatePokemon};
+use pokedex_rs::models::pokemon::{CreatePokemon, PatchPokemon, UpdatePokemon};
 use validator::Validate;
 
 pub fn build_create_pokemon() -> CreatePokemon {

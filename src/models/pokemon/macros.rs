@@ -5,7 +5,7 @@
 /// # Examples
 ///
 /// ```ignore
-/// use pokedex::implement_pokemon_upsert;
+/// use pokedex_rs::implement_pokemon_upsert;
 ///
 /// implement_pokemon_upsert! {
 ///     pub struct CreatePokemon(
@@ -133,7 +133,7 @@ macro_rules! implement_pokemon_upsert {
 /// # Examples
 ///
 /// ```ignore
-/// use pokedex::{implement_pokemon_upsert, implement_pokemon_upsert_from};
+/// use pokedex_rs::{implement_pokemon_upsert, implement_pokemon_upsert_from};
 ///
 /// implement_pokemon_upsert! {
 ///     pub struct CreatePokemon(

@@ -1,22 +1,27 @@
 [package]
-name = "pokedex"
+name = "pokedex_rs"
 version = "0.1.0"
 authors = [ "Charles Lechasseur <shiftingbeard@gmx.com>" ]
 edition = "2021"
 rust-version = "1.68.2"
-default-run = "pokedex"
+default-run = "pokedex_rs"
 
 readme = "README.md"
 license = "MIT"
 
 homepage = "https://github.com/clechasseur/pokerust#readme"
 repository = "https://github.com/clechasseur/pokerust"
+documentation = "https://docs.rs/pokedex_rs/"
 
 description = "Pokedex implemented in Rust 🦀"
 
-keywords = [ "actix", "http", "pokemon" ]
+keywords = [ "actix", "async", "http", "pokemon", "web" ]
+categories = [ "web-programming::http-server" ]
 
 include = [ "migrations/**/*", "seed/**/*", "src/**/*", "tests/**/*", "build.rs", "Cargo.lock", "Cargo.toml", "diesel.toml", "LICENSE", "README.md" ]
+
+[package.metadata.docs.rs]
+targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
 anyhow = "1.0.75"

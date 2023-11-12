@@ -12,10 +12,10 @@ use actix_web::{web, HttpResponse, HttpServer, Responder};
 use anyhow::Context;
 use env_logger::Env;
 use log::info;
-use pokedex::db::get_pool;
-use pokedex::helpers::env::load_optional_dotenv;
-use pokedex::pokedex_app;
-use pokedex::service_env::ServiceEnv;
+use pokedex_rs::db::get_pool;
+use pokedex_rs::helpers::env::load_optional_dotenv;
+use pokedex_rs::pokedex_app;
+use pokedex_rs::service_env::ServiceEnv;
 use rustc_version_runtime::version;
 use serde::Serialize;
 
