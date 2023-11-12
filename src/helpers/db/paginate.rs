@@ -26,11 +26,11 @@ pub trait Paginate: Sized {
     ///
     /// ```no_run
     /// use diesel::QueryDsl;
-    /// # use pokedex::db::get_pool;
-    /// use pokedex::helpers::db::paginate::Paginate;
-    /// use pokedex::models::pokemon::Pokemon;
-    /// use pokedex::schema::pokemons::all_columns;
-    /// use pokedex::schema::pokemons::dsl::*;
+    /// # use pokedex_rs::db::get_pool;
+    /// use pokedex_rs::helpers::db::paginate::Paginate;
+    /// use pokedex_rs::models::pokemon::Pokemon;
+    /// use pokedex_rs::schema::pokemons::all_columns;
+    /// use pokedex_rs::schema::pokemons::dsl::*;
     ///
     /// # async fn example() -> anyhow::Result<()> {
     /// # let pool = get_pool()?;

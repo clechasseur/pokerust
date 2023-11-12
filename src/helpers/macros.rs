@@ -53,7 +53,7 @@
 ///
 /// ```no_run
 /// # use thiserror::Error;
-/// # use pokedex::forward_from;
+/// # use pokedex_rs::forward_from;
 /// #
 /// # #[derive(Debug, Error)]
 /// # #[error("error C")]
@@ -78,7 +78,7 @@
 ///
 /// ```no_run
 /// use thiserror::Error;
-/// use pokedex::forward_from;
+/// use pokedex_rs::forward_from;
 ///
 /// #[derive(Debug, Error)]
 /// #[error("error C")]

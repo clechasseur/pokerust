@@ -1,6 +1,6 @@
 # Rust Pokédex API 🦀
 
-[![CI](https://github.com/clechasseur/pokerust/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/clechasseur/pokerust/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/clechasseur/pokerust/graph/badge.svg?token=fR0lBpOqdp)](https://codecov.io/gh/clechasseur/pokerust) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![CI](https://github.com/clechasseur/pokerust/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/clechasseur/pokerust/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/clechasseur/pokerust/graph/badge.svg?token=fR0lBpOqdp)](https://codecov.io/gh/clechasseur/pokerust) [![Security audit](https://github.com/clechasseur/pokerust/actions/workflows/audit-check.yml/badge.svg?branch=main)](https://github.com/clechasseur/pokerust/actions/workflows/audit-check.yml) [![crates.io](https://img.shields.io/crates/v/pokedex_rs.svg)](https://crates.io/crates/pokedex_rs) [![docs.rs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/pokedex_rs) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 This project implements a simple web application that contains a CRUD API for a Pokédex - a database of [Pokémons](https://en.wikipedia.org/wiki/Pok%C3%A9mon).
 It is written in the [Rust programming language](https://www.rust-lang.org/) and is meant as an experiment in building fully-working
@@ -99,7 +99,7 @@ This will launch the web application server, listening locally on port 8080. You
 including one indicating that the server has been successfully started:
 
 ```
-[2023-10-29T03:38:50Z INFO  pokedex] Pokedex server started in Production! Listening on 0.0.0.0:8080.
+[2023-10-29T03:38:50Z INFO  pokedex_rs] Pokedex server started in Production! Listening on 0.0.0.0:8080.
 ```
 
 Afterwards, the API can be accessed at [`/api/v1/pokemons`](http://localhost:8080/api/v1/pokemons). It is also possible
@@ -110,6 +110,9 @@ to see what endpoints are supported by accessing the [application's Swagger UI](
 In order to build and run the application locally, you need the following additional components:
 
 - A recent stable Rust toolchain (**1.68.2** is required at the minimum). If you do not have Rust installed, the easiest way to do so is via [rustup](https://www.rust-lang.org/tools/install).
+- The `libpq` library (a C interface for Postgres). If you do not have it installed locally, you can install it in a variety of ways, including:
+  - **Homebrew** (macOS / Linux): `brew install libpq`
+  - **Debian-based Linux**: `sudo apt install libpq5`
 - If you wish to work with the database schema, you will need the [Diesel CLI](https://github.com/diesel-rs/diesel/tree/master/diesel_cli). It is not strictly required to run database migrations however, since the locally-built `run_migrations` tool works for this.
 
 By default, the Diesel CLI requires some local libraries for Postgres, MySQL and SQLite; however, only the Postgres support is required for Pokédex.
@@ -118,8 +121,6 @@ To install the CLI with only Postgres support, you can run:
 ```shell
 cargo install diesel_cli --no-default-features --features "postgres"
 ```
-
-You will still need the Postgres [`libpq` library](https://www.postgresql.org/download/), however.
 
 - If you wish to run [`rustfmt`](https://github.com/rust-lang/rustfmt) or build the docs, you will need a Nightly Rust toolchain. If you do not have one, you can install one by running:
 
@@ -176,7 +177,7 @@ This will launch the application server locally. As before, it is then accessibl
 If you check the console log, you might notice that running the server locally starts it in `Development` mode:
 
 ```
-[2023-10-29T04:16:21Z INFO  pokedex] Pokedex server started in Development! Listening on 127.0.0.1:8080.
+[2023-10-29T04:16:21Z INFO  pokedex_rs] Pokedex server started in Development! Listening on 127.0.0.1:8080.
 ```
 
 This affects the content of error messages returned by the API (see below).
@@ -298,8 +299,8 @@ This will build and run the app using the Nightly Rust toolchain and also enable
 can be verified in the server logs:
 
 ```
-[2023-10-29T04:56:08Z INFO  pokedex] Rust version used: 1.75.0-nightly
-[2023-10-29T04:56:08Z INFO  pokedex] Backtrace support: supported
+[2023-10-29T04:56:08Z INFO  pokedex_rs] Rust version used: 1.75.0-nightly
+[2023-10-29T04:56:08Z INFO  pokedex_rs] Backtrace support: supported
 ```
 
 The inclusion of a backtrace with errors can be tested by sending an invalid query to the API:

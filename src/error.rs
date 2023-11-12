@@ -148,9 +148,9 @@ pub trait EnvVarContext {
     /// ```no_run
     /// use std::env;
     ///
-    /// use pokedex::error::EnvVarContext;
+    /// use pokedex_rs::error::EnvVarContext;
     ///
-    /// # fn example() -> pokedex::Result<()> {
+    /// # fn example() -> pokedex_rs::Result<()> {
     /// let db_url = env::var("DATABASE_URL")
     ///     .with_env_var_context(|| "DATABASE_URL environment variable should be set")?;
     /// #
@@ -212,9 +212,9 @@ where
     ///
     /// ```no_run
     /// use diesel_async::pooled_connection::AsyncDieselConnectionManager;
-    /// use pokedex::db::{get_db_url, Pool};
+    /// use pokedex_rs::db::{get_db_url, Pool};
     ///
-    /// fn get_pool() -> pokedex::Result<Pool> {
+    /// fn get_pool() -> pokedex_rs::Result<Pool> {
     ///     let manager = AsyncDieselConnectionManager::new(get_db_url()?);
     ///     Ok(Pool::builder(manager).build()?)
     /// }
@@ -241,12 +241,12 @@ pub trait QueryContext {
     /// ```no_run
     /// use diesel::QueryDsl;
     /// use diesel_async::RunQueryDsl;
-    /// use pokedex::error::QueryContext;
-    /// # use pokedex::db::{get_pool, PooledConnection};
-    /// use pokedex::models::pokemon::Pokemon;
-    /// use pokedex::schema::pokemons::dsl::*;
+    /// use pokedex_rs::error::QueryContext;
+    /// # use pokedex_rs::db::{get_pool, PooledConnection};
+    /// use pokedex_rs::models::pokemon::Pokemon;
+    /// use pokedex_rs::schema::pokemons::dsl::*;
     ///
-    /// # async fn example(pokemon_id: i64) -> pokedex::Result<()> {
+    /// # async fn example(pokemon_id: i64) -> pokedex_rs::Result<()> {
     /// # let pool = get_pool()?;
     /// # let mut connection = pool.get().await?;
     /// #

@@ -131,9 +131,9 @@ impl From<&Error> for ErrorResponse {
     ///
     /// use actix_web::http::StatusCode;
     /// use actix_web::{HttpResponse, ResponseError};
-    /// use pokedex::api::errors::ErrorResponse;
-    /// use pokedex::error::EnvVarContext;
-    /// use pokedex::Error;
+    /// use pokedex_rs::api::errors::ErrorResponse;
+    /// use pokedex_rs::error::EnvVarContext;
+    /// use pokedex_rs::Error;
     ///
     /// let error = env::var("NONEXISTENT_POKEDEX_ENV_VAR")
     ///     .unwrap_err()
@@ -199,7 +199,7 @@ impl ErrorResponse {
 ///
 /// ```no_run
 /// use actix_web_validator::{JsonConfig, PathConfig};
-/// use pokedex::api::errors::actix_error_handler;
+/// use pokedex_rs::api::errors::actix_error_handler;
 ///
 /// let json_config = JsonConfig::default().error_handler(actix_error_handler);
 /// let path_config = PathConfig::default().error_handler(actix_error_handler);

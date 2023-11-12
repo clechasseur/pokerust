@@ -3,7 +3,7 @@ mod list {
     use actix_web::test;
     use diesel::insert_into;
     use diesel_async::RunQueryDsl;
-    use pokedex::services::pokemon::PokemonsPage;
+    use pokedex_rs::services::pokemon::PokemonsPage;
     use serial_test::file_serial;
 
     use crate::init_test_service;
@@ -25,7 +25,7 @@ mod list {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_paginated_list() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -107,7 +107,7 @@ mod get {
     use actix_web::test;
     use diesel::insert_into;
     use diesel_async::RunQueryDsl;
-    use pokedex::models::pokemon::Pokemon;
+    use pokedex_rs::models::pokemon::Pokemon;
     use serial_test::file_serial;
 
     use crate::init_test_service;
@@ -116,7 +116,7 @@ mod get {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_exists() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -182,7 +182,7 @@ mod create {
     use assert_matches::assert_matches;
     use diesel::QueryDsl;
     use diesel_async::RunQueryDsl;
-    use pokedex::models::pokemon::Pokemon;
+    use pokedex_rs::models::pokemon::Pokemon;
     use serde_json::json;
     use serial_test::file_serial;
 
@@ -192,7 +192,7 @@ mod create {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_create_pokemon() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -303,7 +303,7 @@ mod update {
     use assert_matches::assert_matches;
     use diesel::insert_into;
     use diesel_async::RunQueryDsl;
-    use pokedex::models::pokemon::Pokemon;
+    use pokedex_rs::models::pokemon::Pokemon;
     use serde_json::json;
     use serial_test::file_serial;
 
@@ -315,7 +315,7 @@ mod update {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_update_existing() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -391,7 +391,7 @@ mod update {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_invalid_payload() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -423,7 +423,7 @@ mod update {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_invalid_payload_values() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -467,7 +467,7 @@ mod update {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_invalid_payload_values_validation() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -523,12 +523,12 @@ mod patch {
     };
 
     mod existing {
-        use pokedex::models::pokemon::Pokemon;
+        use pokedex_rs::models::pokemon::Pokemon;
 
         use super::*;
 
         async fn test_patch_existing(patched_type_2: Option<Option<String>>) {
-            use pokedex::schema::pokemons::dsl::*;
+            use pokedex_rs::schema::pokemons::dsl::*;
 
             init_test_service!(app, service);
 
@@ -627,7 +627,7 @@ mod patch {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_invalid_payload() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -659,7 +659,7 @@ mod patch {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_invalid_payload_values() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -703,7 +703,7 @@ mod patch {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_invalid_payload_values_validation() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 
@@ -750,7 +750,7 @@ mod delete {
     use actix_web::test;
     use diesel::{insert_into, QueryDsl};
     use diesel_async::RunQueryDsl;
-    use pokedex::models::pokemon::Pokemon;
+    use pokedex_rs::models::pokemon::Pokemon;
     use serial_test::file_serial;
 
     use crate::init_test_service;
@@ -759,7 +759,7 @@ mod delete {
     #[test_log::test(actix_web::test)]
     #[file_serial(api_v1_pokemons)]
     async fn test_delete_existing() {
-        use pokedex::schema::pokemons::dsl::*;
+        use pokedex_rs::schema::pokemons::dsl::*;
 
         init_test_service!(app, service);
 

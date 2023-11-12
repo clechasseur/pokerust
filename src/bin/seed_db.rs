@@ -11,9 +11,9 @@ use cargo_metadata::camino::Utf8PathBuf;
 use cargo_metadata::MetadataCommand;
 use diesel::{delete, insert_into, Connection, RunQueryDsl};
 use log::{info, trace};
-use pokedex::db::{get_db_url, SyncConnection};
-use pokedex::helpers::env::load_optional_dotenv;
-use pokedex::models::pokemon::ImportPokemon;
+use pokedex_rs::db::{get_db_url, SyncConnection};
+use pokedex_rs::helpers::env::load_optional_dotenv;
+use pokedex_rs::models::pokemon::ImportPokemon;
 use simple_logger::SimpleLogger;
 use validator::Validate;
 
@@ -103,7 +103,7 @@ fn load_pokemons_from_seed_file<P: AsRef<Path>>(path: P) -> anyhow::Result<Vec<I
 
 /// Clears the Pokedex database of any existing pokemons.
 fn drop_existing_pokemons(connection: &mut SyncConnection) -> anyhow::Result<()> {
-    use pokedex::schema::pokemons::dsl::*;
+    use pokedex_rs::schema::pokemons::dsl::*;
 
     let deleted_count = delete(pokemons)
         .execute(connection)
@@ -118,7 +118,7 @@ fn insert_pokemons(
     connection: &mut SyncConnection,
     new_pokemons: &Vec<ImportPokemon>,
 ) -> anyhow::Result<()> {
-    use pokedex::schema::pokemons::dsl::*;
+    use pokedex_rs::schema::pokemons::dsl::*;
 
     let inserted_count = insert_into(pokemons)
         .values(new_pokemons)
