@@ -1,6 +1,6 @@
 # Rust Pokédex API 🦀
 
-[![CI](https://github.com/clechasseur/pokerust/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/clechasseur/pokerust/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/clechasseur/pokerust/graph/badge.svg?token=fR0lBpOqdp)](https://codecov.io/gh/clechasseur/pokerust) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![CI](https://github.com/clechasseur/pokerust/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/clechasseur/pokerust/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/clechasseur/pokerust/graph/badge.svg?token=fR0lBpOqdp)](https://codecov.io/gh/clechasseur/pokerust) [![Security audit](https://github.com/clechasseur/pokerust/actions/workflows/audit-check.yml/badge.svg?branch=main)](https://github.com/clechasseur/pokerust/actions/workflows/audit-check.yml) [![crates.io](https://img.shields.io/crates/v/pokedex_rs.svg)](https://crates.io/crates/pokedex_rs) [![docs.rs](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/pokedex_rs) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 This project implements a simple web application that contains a CRUD API for a Pokédex - a database of [Pokémons](https://en.wikipedia.org/wiki/Pok%C3%A9mon).
 It is written in the [Rust programming language](https://www.rust-lang.org/) and is meant as an experiment in building fully-working
