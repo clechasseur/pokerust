@@ -574,7 +574,7 @@ crate comes in: it offers a derive macro to automatically implement the `Error` 
 
 For applications, it is sometimes desirable to be able to handle any kind of error, because we might call many different
 libraries, so creating a custom type could be unwieldy. The `anyhow` crate can be used for this: its [`anyhow::Error`](https://docs.rs/anyhow/latest/anyhow/struct.Error.html)
-type can be used to store any source error, as long as it implements the standard library's `Error` trait. This meakes
+type can be used to store any source error, as long as it implements the standard library's `Error` trait. This makes
 it easier to add proper error handling at the application level.
 
 Rust's error handling design means you need to think carefully about how you handle errors in your code: when an error
