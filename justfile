@@ -30,7 +30,7 @@ default:
 tidy: clippy fmt
 
 clippy:
-    cargo clippy --workspace --all-targets --all-features -- -D warnings
+    {{cargo}} clippy --workspace --all-targets --all-features -- -D warnings
 
 fmt:
     cargo +nightly fmt --all
