@@ -112,7 +112,7 @@ In order to build and run the application locally, you need the following additi
 - A recent stable Rust toolchain (**1.68.2** is required at the minimum). If you do not have Rust installed, the easiest way to do so is via [rustup](https://www.rust-lang.org/tools/install).
 - The `libpq` library (a C interface for Postgres). If you do not have it installed locally, you can install it in a variety of ways, including:
   - **Homebrew** (macOS / Linux): `brew install libpq`
-  - **Debian-based Linux**: `sudo apt install libpq5`
+  - **Debian-based Linux**: `sudo apt install libpq-dev`
 - If you wish to work with the database schema, you will need the [Diesel CLI](https://github.com/diesel-rs/diesel/tree/master/diesel_cli). It is not strictly required to run database migrations however, since the locally-built `run_migrations` tool works for this.
 
 By default, the Diesel CLI requires some local libraries for Postgres, MySQL and SQLite; however, only the Postgres support is required for Pokédex.
