@@ -218,8 +218,42 @@ jobs:
             tarpaulin-report.html
 
   doc:
-    name: Rustdoc check
+    name: Rustdoc check for Rust ${{ matrix.toolchain }}${{ matrix.experimental && ' (experimental)' || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [ stable, nightly ]
+        include:
+          - experimental: false
+          - toolchain: nightly
+            experimental: true
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.toolchain }}
+
+      - name: Rust Cache
+        if: ${{ !matrix.experimental }}
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: false
+
+      - name: Install just
+        uses: extractions/setup-just@v1
+
+      - name: Generate doc using rustdoc
+        run: just open='' doc
+
+  doc-coverage:
+    name: Rustdoc coverage check
+    runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -227,11 +261,11 @@ jobs:
       - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: Run rustdoc
-        uses: clechasseur/rs-cargo@v2
-        with:
-          command: doc
-          args: --workspace --all-features
+      - name: Install just
+        uses: extractions/setup-just@v1
+
+      - name: Check doc coverage
+        run: just doc-coverage
 
   publish-dry-run:
     name: Publish dry-run
@@ -243,16 +277,16 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install just
+        uses: extractions/setup-just@v1
+
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
           cache-targets: false
 
       - name: Perform publish dry-run
-        uses: clechasseur/rs-cargo@v2
-        with:
-          command: publish
-          args: --dry-run
+        run: just test-package
 
   docker-image:
     name: Build Docker image for Rust ${{ matrix.toolchain }}${{ matrix.experimental && ' (experimental)' || '' }}
