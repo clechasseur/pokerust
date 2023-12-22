@@ -1,8 +1,25 @@
-//! Private lib crate implementing the types and functions required to implement a CRUD REST API
-//! for the Pokedex.
+//! # Rust Pokédex API 🦀
 //!
-//! Includes everything needed to connect to the database, perform queries and publish the REST
-//! endpoints required. Used mainly through the [`pokedex_app!`] macro to create a Pokedex [`App`](actix_web::App).
+//! This project implements a simple web application that contains a CRUD API for a Pokédex - a database of [Pokémons](https://en.wikipedia.org/wiki/Pok%C3%A9mon).
+//! It is meant as an experiment in building fully-working web applications in Rust.
+//!
+//! This project includes several components usually found in modern web applications, including:
+//!
+//! - A high-performance HTTP server to handle incoming requests
+//! - A REST API with CRUD endpoints for Pokémon entities
+//! - Automatic serialization/deserialization of Pokémon entities as JSON
+//! - Automatic OpenAPI documentation including Swagger UI support (and others)
+//! - An ORM-like interface to persist Pokémons in a Postgres database
+//! - Support for managing and applying database migrations
+//! - Validation of incoming data at the endpoint level
+//! - Database connection pooling to improve performance
+//! - Configurable logging using a simple logging facade
+//! - Error handling with separation between service errors and their HTTP response counterparts
+//! - Support for development and production environments
+//!
+//! This documentation is for the private lib crate implementing the types and functions required
+//! to implement the CRUD REST API for the Pokedex. For more details about the project, see the
+//! [project's GitHub repository](https://github.com/clechasseur/pokerust).
 //!
 //! # Notes
 //!
