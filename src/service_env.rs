@@ -1,12 +1,8 @@
 //! Information about the service's runtime environment.
 
-// Unfortunately, strum's `EnumIs` generates undocumented methods
-#![allow(missing_docs)]
-
 use std::env;
-use std::sync::RwLock;
+use std::sync::{OnceLock, RwLock};
 
-use once_cell::sync::Lazy;
 use strum_macros::{AsRefStr, Display, EnumIs, EnumString};
 
 /// Environment in which service is running.
@@ -60,7 +56,7 @@ impl ServiceEnv {
     /// }
     /// ```
     pub fn current() -> Self {
-        static CURRENT_ENV: Lazy<ServiceEnv> = Lazy::new(ServiceEnv::reload);
+        static CURRENT_ENV: OnceLock<ServiceEnv> = OnceLock::new();
 
         if cfg!(test) {
             let test_env = TEST_ENV.read().unwrap();
@@ -69,7 +65,7 @@ impl ServiceEnv {
             }
         }
 
-        *CURRENT_ENV
+        *CURRENT_ENV.get_or_init(ServiceEnv::reload)
     }
 
     /// Returns the current runtime environment, reloading it.
@@ -105,17 +101,11 @@ impl ServiceEnv {
     where
         F: std::future::Future<Output = ()>,
     {
-        let prev_test_env;
-        {
-            let mut test_env = TEST_ENV.write().unwrap();
-            prev_test_env = *test_env;
-            *test_env = Some(env);
-        }
+        let prev_test_env = TEST_ENV.write().unwrap().replace(env);
 
         f.await;
 
-        let mut test_env = TEST_ENV.write().unwrap();
-        *test_env = prev_test_env;
+        *TEST_ENV.write().unwrap() = prev_test_env;
     }
 }
 
@@ -182,15 +172,18 @@ mod tests {
         #[actix_web::test]
         #[file_serial(pokedex_env)]
         async fn test_test_wrapper() {
-            let new_env = match ServiceEnv::current() {
+            let old_env = ServiceEnv::current();
+            let new_env = match old_env {
                 ServiceEnv::Development => ServiceEnv::Production,
                 ServiceEnv::Production => ServiceEnv::Development,
             };
 
+            assert_eq!(old_env, ServiceEnv::current());
             ServiceEnv::test(new_env, async {
                 assert_eq!(new_env, ServiceEnv::current());
             })
             .await;
+            assert_eq!(old_env, ServiceEnv::current());
         }
     }
 }
