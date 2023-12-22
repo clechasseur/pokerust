@@ -50,7 +50,7 @@ strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25.3"
 thiserror = "1.0.51"
 tokio = { version = "1.35.1", features = ["full"] }
-utoipa = { version = "4.0.0", features = ["actix_extras"] }
+utoipa = { version = "4.1.0", features = ["actix_extras"] }
 utoipa-rapidoc = { version = "2.0.0", features = ["actix-web"] }
 utoipa-redoc = { version = "2.0.0", features = ["actix-web"] }
 utoipa-swagger-ui = { version = "5.0.0", features = ["actix-web", "debug-embed"] }
