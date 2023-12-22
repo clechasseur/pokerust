@@ -172,7 +172,7 @@ impl Service {
 #[cfg_attr(
     doc,
     doc = r"
-        A page of [`Pokemon`]s, as returned by [`get_pokemons`](Service::get_pokemons).
+        A page of [`Pokemon`]s, as returned by [`Service::get_pokemons`].
 
         Contains the list of [`Pokemon`]s in the page as well as paging information.
     "

@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 use validator::ValidationError;
 
-/// The valid Pokemon typos.
+/// The valid Pokemon types.
 ///
 /// Can be used to validate the `type_1` and `type_2` fields of a Pokemon struct.
 ///
@@ -31,7 +31,7 @@ pub fn validate_pokemon_type(type_value: &str) -> Result<(), ValidationError> {
         );
 
         let mut validation_error = ValidationError::new("invalid_type");
-        validation_error.message = Some(Cow::Owned(error_message));
+        validation_error.message = Some(Cow::from(error_message));
 
         Err(validation_error)
     }
