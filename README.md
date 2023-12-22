@@ -109,7 +109,7 @@ to see what endpoints are supported by accessing the [application's Swagger UI](
 
 In order to build and run the application locally, you need the following additional components:
 
-- A recent stable Rust toolchain (**1.68.2** is required at the minimum). If you do not have Rust installed, the easiest way to do so is via [rustup](https://www.rust-lang.org/tools/install).
+- A recent stable Rust toolchain (**1.70.0** is required at the minimum). If you do not have Rust installed, the easiest way to do so is via [rustup](https://www.rust-lang.org/tools/install).
 - The `libpq` library (a C interface for Postgres). If you do not have it installed locally, you can install it in a variety of ways, including:
   - **Homebrew** (macOS / Linux): `brew install libpq`
   - **Debian-based Linux**: `sudo apt install libpq-dev`
