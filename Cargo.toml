@@ -24,7 +24,7 @@ include = [ "migrations/**/*", "seed/**/*", "src/**/*", "tests/**/*", "build.rs"
 targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
-anyhow = "1.0.75"
+anyhow = "1.0.76"
 actix-web = "4.4.0"
 actix-web-validator = "5.0.1"
 cargo_metadata = "0.18.1"
