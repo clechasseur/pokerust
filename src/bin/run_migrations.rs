@@ -3,6 +3,7 @@
 //! Similar to running `diesel migration run`, but without the need to install the diesel CLI.
 
 use std::env;
+use std::sync::OnceLock;
 use std::time::Instant;
 
 use anyhow::{anyhow, Context};
@@ -10,7 +11,6 @@ use diesel::migration::MigrationSource;
 use diesel::{Connection, ConnectionError};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use log::{info, trace};
-use once_cell::sync::Lazy;
 use pokedex_rs::db::{get_db_url, Backend, SyncConnection};
 use pokedex_rs::helpers::env::load_optional_dotenv;
 use regex::Regex;
@@ -56,11 +56,14 @@ fn main() -> anyhow::Result<()> {
 
 /// Filters the user/password from a DB URL so we can log it.
 fn filter_db_url(db_url: &str) -> anyhow::Result<String> {
-    static FILTER: Lazy<Result<Regex, regex::Error>> = Lazy::new(|| {
-        Regex::new("postgres://(?:[^:@]+(?::[^@]+)?@)?(?<host>[^:]+)(?<port>:\\d+)?/(?<db>\\w+)")
-    });
+    static FILTER: OnceLock<Result<Regex, regex::Error>> = OnceLock::new();
 
     let filter = FILTER
+        .get_or_init(|| {
+            Regex::new(
+                "postgres://(?:[^:@]+(?::[^@]+)?@)?(?<host>[^:]+)(?<port>:\\d+)?/(?<db>\\w+)",
+            )
+        })
         .as_ref()
         .map_err(|err| err.clone())
         .with_context(|| "failed to compile DB URL filter")?;
