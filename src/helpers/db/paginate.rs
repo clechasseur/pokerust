@@ -37,8 +37,8 @@ pub trait Paginate: Sized {
     /// // let pool = ...;
     /// let mut connection = pool.get().await?;
     ///
-    /// let page = 1i64;
-    /// let page_size = 10i64;
+    /// let page = 1;
+    /// let page_size = 10;
     ///
     /// let (paged_pokemons, total_pages) = pokemons
     ///     .order(id)
