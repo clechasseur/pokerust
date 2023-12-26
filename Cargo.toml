@@ -47,7 +47,7 @@ serde_with = "3.4.0"
 simple_logger = "4.3.0"
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25.3"
-thiserror = "1.0.51"
+thiserror = "1.0.52"
 tokio = { version = "1.35.1", features = ["full"] }
 utoipa = { version = "4.1.0", features = ["actix_extras"] }
 utoipa-rapidoc = { version = "2.0.0", features = ["actix-web"] }
