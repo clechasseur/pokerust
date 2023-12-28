@@ -49,6 +49,58 @@ where
 mod tests {
     use super::*;
 
+    mod load_optional_dotenv {
+        use std::fs::{copy, rename};
+        use std::path::{Path, PathBuf};
+
+        use assert_matches::assert_matches;
+        use serial_test::serial;
+
+        use super::*;
+
+        fn project_root() -> PathBuf {
+            env!("CARGO_MANIFEST_DIR").into()
+        }
+
+        fn project_path<P: AsRef<Path>>(path: P) -> PathBuf {
+            project_root().join(path)
+        }
+
+        fn test_file_path<P: AsRef<Path>>(file: P) -> PathBuf {
+            project_path("resources/test").join(file)
+        }
+
+        #[test]
+        #[serial(load_optional_dotenv_tests)]
+        fn test_exists() {
+            assert_matches!(load_optional_dotenv(), Ok(true));
+        }
+
+        #[test]
+        #[serial(load_optional_dotenv_tests)]
+        fn test_not_found() {
+            rename(project_path(".env"), project_path(".env.bak")).unwrap();
+
+            assert_matches!(load_optional_dotenv(), Ok(false));
+
+            rename(project_path(".env.bak"), project_path(".env")).unwrap();
+        }
+
+        #[test]
+        #[serial(load_optional_dotenv_tests)]
+        fn test_broken() {
+            rename(project_path(".env"), project_path(".env.bak")).unwrap();
+
+            let broken_copy_result = copy(test_file_path(".env.broken"), project_path(".env"));
+            if broken_copy_result.is_ok() {
+                assert_matches!(load_optional_dotenv(), Err(dotenvy::Error::LineParse(_, _)));
+            }
+
+            rename(project_path(".env.bak"), project_path(".env")).unwrap();
+            broken_copy_result.unwrap();
+        }
+    }
+
     mod int_env_var {
         use std::num::IntErrorKind;
 
