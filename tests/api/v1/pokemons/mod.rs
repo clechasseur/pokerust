@@ -293,7 +293,7 @@ mod create {
             .to_request();
         let result = test::call_service(&service, req).await;
 
-        assert_eq!(StatusCode::BAD_REQUEST, result.status());
+        assert_eq!(StatusCode::UNPROCESSABLE_ENTITY, result.status());
     }
 }
 
@@ -505,7 +505,7 @@ mod update {
             .to_request();
         let result = test::call_service(&service, req).await;
 
-        assert_eq!(StatusCode::BAD_REQUEST, result.status());
+        assert_eq!(StatusCode::UNPROCESSABLE_ENTITY, result.status());
     }
 }
 
@@ -741,7 +741,7 @@ mod patch {
             .to_request();
         let result = test::call_service(&service, req).await;
 
-        assert_eq!(StatusCode::BAD_REQUEST, result.status());
+        assert_eq!(StatusCode::UNPROCESSABLE_ENTITY, result.status());
     }
 }
 

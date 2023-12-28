@@ -1421,6 +1421,8 @@ dependencies = [
  "serde",
  "serde-this-or-that",
  "serde_json",
+ "serde_qs",
+ "serde_urlencoded",
  "serde_with",
  "serial_test",
  "simple_logger",
