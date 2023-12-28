@@ -224,3 +224,85 @@ pub struct ImportPokemon {
     #[serde(deserialize_with = "serde_this_or_that::as_bool")]
     pub legendary: bool,
 }
+
+//noinspection DuplicatedCode
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_pokemon_for_create_pokemon() {
+        let pokemon = Pokemon {
+            id: 0,
+            number: 1,
+            name: "Bulbasaur".into(),
+            type_1: "Grass".into(),
+            type_2: Some("Poison".into()),
+            total: 318,
+            hp: 45,
+            attack: 49,
+            defense: 49,
+            sp_atk: 65,
+            sp_def: 65,
+            speed: 45,
+            generation: 1,
+            legendary: false,
+        };
+
+        let expected_create_pokemon = CreatePokemon {
+            number: 1,
+            name: "Bulbasaur".into(),
+            type_1: "Grass".into(),
+            type_2: Some("Poison".into()),
+            total: 318,
+            hp: 45,
+            attack: 49,
+            defense: 49,
+            sp_atk: 65,
+            sp_def: 65,
+            speed: 45,
+            generation: 1,
+            legendary: false,
+        };
+        let actual_create_pokemon: CreatePokemon = pokemon.into();
+        assert_eq!(actual_create_pokemon, expected_create_pokemon);
+    }
+
+    #[test]
+    fn test_from_pokemon_for_update_pokemon() {
+        let pokemon = Pokemon {
+            id: 0,
+            number: 1,
+            name: "Bulbasaur".into(),
+            type_1: "Grass".into(),
+            type_2: Some("Poison".into()),
+            total: 318,
+            hp: 45,
+            attack: 49,
+            defense: 49,
+            sp_atk: 65,
+            sp_def: 65,
+            speed: 45,
+            generation: 1,
+            legendary: false,
+        };
+
+        let expected_update_pokemon = UpdatePokemon {
+            number: 1,
+            name: "Bulbasaur".into(),
+            type_1: "Grass".into(),
+            type_2: Some("Poison".into()),
+            total: 318,
+            hp: 45,
+            attack: 49,
+            defense: 49,
+            sp_atk: 65,
+            sp_def: 65,
+            speed: 45,
+            generation: 1,
+            legendary: false,
+        };
+        let actual_update_pokemon: UpdatePokemon = pokemon.into();
+        assert_eq!(actual_update_pokemon, expected_update_pokemon);
+    }
+}
