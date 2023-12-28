@@ -248,7 +248,7 @@ jobs:
         uses: extractions/setup-just@v1
 
       - name: Generate doc using rustdoc
-        run: just open='' doc
+        run: just doc
 
   doc-coverage:
     name: Rustdoc coverage check
