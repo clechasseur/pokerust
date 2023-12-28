@@ -187,6 +187,7 @@ macro_rules! implement_pokemon_upsert_from {
 #[cfg(test)]
 mod tests {
     use crate::models::pokemon::Pokemon;
+
     implement_pokemon_upsert! {
         struct TestCreatePokemon(
             doc = "TestCreatePokemon doc",
@@ -274,6 +275,32 @@ mod tests {
         };
         let actual_update_pokemon: TestUpdatePokemon = pokemon.into();
         assert_eq!(actual_update_pokemon, expected_update_pokemon);
+    }
+
+    mod debug {
+        use super::*;
+
+        #[test]
+        fn test_derive() {
+            // Note: this test is necessary because of a bug in cargo-tarpaulin, see
+            // https://github.com/xd009642/tarpaulin/issues/351#issuecomment-1722148936
+            let create_pokemon = TestCreatePokemon {
+                number: 1,
+                name: "Bulbasaur".into(),
+                type_1: "Grass".into(),
+                type_2: Some("Poison".into()),
+                total: 318,
+                hp: 45,
+                attack: 49,
+                defense: 49,
+                sp_atk: 65,
+                sp_def: 65,
+                speed: 45,
+                generation: 1,
+                legendary: false,
+            };
+            assert!(!format!("{:?}", create_pokemon).is_empty());
+        }
     }
 
     mod implement_pokemon_upsert_from {
