@@ -23,3 +23,6 @@ docker-compose.override.yml
 *.profraw
 cobertura.xml
 tarpaulin-report.*
+
+# .env.bak is created by some unit tests
+.env.bak
