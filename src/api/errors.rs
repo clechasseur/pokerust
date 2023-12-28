@@ -1,13 +1,18 @@
 //! Types and functions to implement proper error handling in the Pokedex API.
 
 use actix_web::body::BoxBody;
+use actix_web::error::JsonPayloadError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
+use actix_web_validator::error::DeserializeErrors;
+use actix_web_validator::Error as ValidationError;
 use diesel::result::DatabaseErrorKind;
+use diesel::result::Error as DieselError;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, TryFromInto};
 use utoipa::{ToResponse, ToSchema};
 
+use crate::error::{InputContext, InputErrorContext};
 use crate::helpers::error::recursive_error_message;
 use crate::service_env::ServiceEnv;
 use crate::Error;
@@ -19,7 +24,7 @@ impl ResponseError for Error {
     /// external HTTP [`StatusCode`].
     fn status_code(&self) -> StatusCode {
         let status_code = match self {
-            Error::Input { .. } => Some(StatusCode::BAD_REQUEST),
+            Error::Input { context, source, .. } => status_code_for_input_error(*context, source),
             Error::Query { source, .. } => status_code_for_query_error(source),
             _ => None,
         };
@@ -36,20 +41,75 @@ impl ResponseError for Error {
     }
 }
 
-/// Helper function to get a [`StatusCode`] for a [query error](diesel::result::Error).
+/// Helper function to get a [`StatusCode`] for an [input error](ValidationError).
 ///
-/// If the error is due to faulty user input (like [`NotFound`](diesel::result::Error::NotFound)),
-/// this method will return `Some` with an appropriate HTTP status code (like [`NOT_FOUND`](StatusCode::NOT_FOUND)).
+/// If the error is due to validation failures that occur while parsing an entity in the POST data
+/// of a request, this function will return [`Some(UNPROCESSABLE_ENTITY)`](StatusCode::UNPROCESSABLE_ENTITY).
+/// If the error is due to other invalid data issues, this function will return [`Some(BAD_REQUEST)`](StatusCode::BAD_REQUEST).
 /// Otherwise, it will return `None` and the caller can decide what status code to use.
-pub fn status_code_for_query_error(error: &diesel::result::Error) -> Option<StatusCode> {
+pub fn status_code_for_input_error(
+    context: InputErrorContext,
+    error: &ValidationError,
+) -> Option<StatusCode> {
     match error {
-        diesel::result::Error::NotFound => Some(StatusCode::NOT_FOUND),
-        diesel::result::Error::DatabaseError(kind, ..) => match kind {
-            DatabaseErrorKind::UniqueViolation | DatabaseErrorKind::CheckViolation => {
-                Some(StatusCode::BAD_REQUEST)
-            },
-            _ => None,
+        // Validation errors should return 422 Unprocessable Entity _only_ when a JSON validation occurs.
+        // Otherwise, it's not an entity, so we return 400 Bad Request.
+        ValidationError::Validate(_) if context.is_json() => Some(StatusCode::UNPROCESSABLE_ENTITY),
+        ValidationError::Validate(_) => Some(StatusCode::BAD_REQUEST),
+
+        // Deserialization errors are caused by faulty input, for which we return 400 Bad Request.
+        ValidationError::Deserialize(DeserializeErrors::DeserializeQuery(_))
+            if context.is_query() =>
+        {
+            Some(StatusCode::BAD_REQUEST)
         },
+        ValidationError::Deserialize(DeserializeErrors::DeserializeJson(_))
+            if context.is_json() =>
+        {
+            Some(StatusCode::BAD_REQUEST)
+        },
+        ValidationError::Deserialize(DeserializeErrors::DeserializePath(_))
+            if context.is_path() =>
+        {
+            Some(StatusCode::BAD_REQUEST)
+        },
+
+        // Note: I believe that JSON deserialization errors should not result in the error below, but rather
+        // in the ValidationError::Deserialize variant with a DeserializeErrors::DeserializeJson inside.
+        // I've entered an issue for this: https://github.com/rambler-digital-solutions/actix-web-validator/issues/47
+        ValidationError::JsonPayloadError(JsonPayloadError::Deserialize(_))
+            if context.is_json() =>
+        {
+            Some(StatusCode::BAD_REQUEST)
+        },
+
+        // Other JSON payload errors are caused by faulty input or broken pipe on the client side, for which we return 400 Bad Request.
+        ValidationError::JsonPayloadError(_) if context.is_json() => Some(StatusCode::BAD_REQUEST),
+
+        // Url-encoded errors are caused by faulty input, for which we return 400 Bad Request.
+        ValidationError::UrlEncodedError(_) if context.is_query() => Some(StatusCode::BAD_REQUEST),
+
+        // QsError is not possible currently because we do not use `serde_qs` deserialization. If this changes
+        // in the future we may need to process this differently.
+        ValidationError::QsError(_) => None,
+
+        // Any other combination is a programmer error (possible on the part of the programmer of a dependency).
+        _ => None,
+    }
+}
+
+/// Helper function to get a [`StatusCode`] for a [query error](DieselError).
+///
+/// If the error is due to faulty user input (like [`NotFound`](DieselError::NotFound)),
+/// this function will return `Some` with an appropriate HTTP status code (like [`NOT_FOUND`](StatusCode::NOT_FOUND)).
+/// Otherwise, it will return `None` and the caller can decide what status code to use.
+pub fn status_code_for_query_error(error: &DieselError) -> Option<StatusCode> {
+    match error {
+        DieselError::NotFound => Some(StatusCode::NOT_FOUND),
+        DieselError::DatabaseError(
+            DatabaseErrorKind::UniqueViolation | DatabaseErrorKind::CheckViolation,
+            ..,
+        ) => Some(StatusCode::UNPROCESSABLE_ENTITY),
         _ => None,
     }
 }
@@ -186,31 +246,38 @@ impl ErrorResponse {
     }
 }
 
-/// Generic error handler for `actix_web`'s various configs.
+/// Generic error handler for input validation errors.
 ///
-/// This handler accepts any type of error that can be turned into our [`Error`] type, then turns
-/// that into an [`actix_web::error::Error`]. This is possible because we implemented [`ResponseError`]
-/// for our [`Error`] type - thus, `actix_web` will use our implementation to generate an appropriate
-/// HTTP response for the type of error encountered. This makes it possible to handle pre-request handler
-/// errors (like for example [`DeserializeErrors`]s) using the same error handling code as in-request
-/// handler errors.
+/// This handler accepts any type of error that implements [`InputContext`] (e.g. can be turned into an
+/// [`Input`](Error::Input) error), then turns that into an [`actix_web::error::Error`]. This is possible
+/// because we implemented [`ResponseError`] for our [`Error`] type - thus, `actix_web` will use our implementation
+/// to generate an appropriate HTTP response for the type of error encountered. This makes it possible to handle
+/// pre-request handler errors (like for example [`DeserializeErrors`]s) using the same error handling code as
+/// in-request handler errors.
 ///
 /// # Examples
 ///
 /// ```no_run
-/// use actix_web_validator::{JsonConfig, PathConfig};
-/// use pokedex_rs::api::errors::actix_error_handler;
+/// use actix_web_validator::{JsonConfig, PathConfig, QueryConfig};
+/// use pokedex_rs::api::errors::input_error_handler;
+/// use pokedex_rs::error::InputErrorContext;
 ///
-/// let json_config = JsonConfig::default().error_handler(actix_error_handler);
-/// let path_config = PathConfig::default().error_handler(actix_error_handler);
+/// let json_config =
+///     JsonConfig::default().error_handler(input_error_handler(InputErrorContext::Json));
+/// let path_config =
+///     PathConfig::default().error_handler(input_error_handler(InputErrorContext::Path));
+/// let query_config =
+///     QueryConfig::default().error_handler(input_error_handler(InputErrorContext::Query));
 /// ```
 ///
 /// [`DeserializeErrors`]: actix_web_validator::error::DeserializeErrors
-pub fn actix_error_handler<E, R>(err: E, _req: &R) -> actix_web::error::Error
+pub fn input_error_handler<E, R>(
+    context: InputErrorContext,
+) -> impl Fn(E, &R) -> actix_web::error::Error + Send + Sync + 'static
 where
-    E: Into<Error>,
+    E: InputContext<Output = Error>,
 {
-    Into::<Error>::into(err).into()
+    move |err, _req| err.with_input_context(context).into()
 }
 
 #[cfg(test)]
@@ -239,12 +306,10 @@ mod tests {
     mod response_error_for_error {
         use std::env;
 
-        use actix_web::error::JsonPayloadError;
-        use diesel_async::pooled_connection::deadpool::PoolError;
         use serial_test::file_parallel;
 
         use super::*;
-        use crate::error::{EnvVarContext, QueryContext};
+        use crate::error::QueryContext;
 
         fn assert_response_error_impl<E>(error: E, expected_status_code: StatusCode)
         where
@@ -263,116 +328,523 @@ mod tests {
             assert_eq!(expected_error_response, actual_error_response);
         }
 
-        fn assert_response_error_impl_for_query<E>(error: E, expected_status_code: StatusCode)
-        where
-            E: QueryContext<Output = Error>,
+        mod env_var {
+            use super::*;
+            use crate::error::EnvVarContext;
+
+            #[test]
+            #[file_parallel(pokedex_env)]
+            fn test_all() {
+                assert_response_error_impl(
+                    env::VarError::NotPresent.with_env_var_context(|| "SOME_ENV_VAR not defined"),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                );
+            }
+        }
+
+        mod input {
+            use actix_web::error::UrlencodedError;
+            use serde::de;
+            use serde::de::Error as _;
+            use validator::ValidationErrors;
+
+            use super::*;
+
+            fn assert_response_error_impl_for_input<E>(
+                error: E,
+                context: InputErrorContext,
+                expected_status_code: StatusCode,
+            ) where
+                E: InputContext<Output = Error>,
+            {
+                assert_response_error_impl(error.with_input_context(context), expected_status_code);
+            }
+
+            mod context {
+                use super::*;
+
+                mod query {
+                    use super::*;
+
+                    fn assert_error_impl_for_query<E>(error: E, expected_status_code: StatusCode)
+                    where
+                        E: InputContext<Output = Error>,
+                    {
+                        assert_response_error_impl_for_input(
+                            error,
+                            InputErrorContext::Query,
+                            expected_status_code,
+                        );
+                    }
+
+                    #[test]
+                    #[file_parallel(pokedex_env)]
+                    fn test_all() {
+                        assert_error_impl_for_query(
+                            ValidationError::Validate(ValidationErrors::new()),
+                            StatusCode::BAD_REQUEST,
+                        );
+
+                        assert_error_impl_for_query(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializeQuery(
+                                serde_urlencoded::de::Error::custom("query error"),
+                            )),
+                            StatusCode::BAD_REQUEST,
+                        );
+                        assert_error_impl_for_query(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializeJson(
+                                serde_json::Error::custom("json error"),
+                            )),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                        assert_error_impl_for_query(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializePath(
+                                de::value::Error::custom("path error"),
+                            )),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+
+                        assert_error_impl_for_query(
+                            ValidationError::JsonPayloadError(JsonPayloadError::ContentType),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                        assert_error_impl_for_query(
+                            ValidationError::JsonPayloadError(JsonPayloadError::Deserialize(
+                                serde_json::Error::custom("json error"),
+                            )),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+
+                        assert_error_impl_for_query(
+                            ValidationError::UrlEncodedError(UrlencodedError::ContentType),
+                            StatusCode::BAD_REQUEST,
+                        );
+
+                        assert_error_impl_for_query(
+                            ValidationError::QsError(serde_qs::Error::custom("qs error")),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                    }
+                }
+
+                mod json {
+                    use super::*;
+
+                    fn assert_error_impl_for_json<E>(error: E, expected_status_code: StatusCode)
+                    where
+                        E: InputContext<Output = Error>,
+                    {
+                        assert_response_error_impl_for_input(
+                            error,
+                            InputErrorContext::Json,
+                            expected_status_code,
+                        );
+                    }
+
+                    #[test]
+                    #[file_parallel(pokedex_env)]
+                    fn test_all() {
+                        assert_error_impl_for_json(
+                            ValidationError::Validate(ValidationErrors::new()),
+                            StatusCode::UNPROCESSABLE_ENTITY,
+                        );
+
+                        assert_error_impl_for_json(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializeQuery(
+                                serde_urlencoded::de::Error::custom("query error"),
+                            )),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                        assert_error_impl_for_json(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializeJson(
+                                serde_json::Error::custom("json error"),
+                            )),
+                            StatusCode::BAD_REQUEST,
+                        );
+                        assert_error_impl_for_json(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializePath(
+                                de::value::Error::custom("path error"),
+                            )),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+
+                        assert_error_impl_for_json(
+                            ValidationError::JsonPayloadError(JsonPayloadError::ContentType),
+                            StatusCode::BAD_REQUEST,
+                        );
+                        assert_error_impl_for_json(
+                            ValidationError::JsonPayloadError(JsonPayloadError::Deserialize(
+                                serde_json::Error::custom("json error"),
+                            )),
+                            StatusCode::BAD_REQUEST,
+                        );
+
+                        assert_error_impl_for_json(
+                            ValidationError::UrlEncodedError(UrlencodedError::ContentType),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+
+                        assert_error_impl_for_json(
+                            ValidationError::QsError(serde_qs::Error::custom("qs error")),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                    }
+                }
+
+                mod path {
+                    use super::*;
+
+                    fn assert_error_impl_for_path<E>(error: E, expected_status_code: StatusCode)
+                    where
+                        E: InputContext<Output = Error>,
+                    {
+                        assert_response_error_impl_for_input(
+                            error,
+                            InputErrorContext::Path,
+                            expected_status_code,
+                        );
+                    }
+
+                    #[test]
+                    #[file_parallel(pokedex_env)]
+                    fn test_all() {
+                        assert_error_impl_for_path(
+                            ValidationError::Validate(ValidationErrors::new()),
+                            StatusCode::BAD_REQUEST,
+                        );
+
+                        assert_error_impl_for_path(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializeQuery(
+                                serde_urlencoded::de::Error::custom("query error"),
+                            )),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                        assert_error_impl_for_path(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializeJson(
+                                serde_json::Error::custom("json error"),
+                            )),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                        assert_error_impl_for_path(
+                            ValidationError::Deserialize(DeserializeErrors::DeserializePath(
+                                de::value::Error::custom("path error"),
+                            )),
+                            StatusCode::BAD_REQUEST,
+                        );
+
+                        assert_error_impl_for_path(
+                            ValidationError::JsonPayloadError(JsonPayloadError::ContentType),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                        assert_error_impl_for_path(
+                            ValidationError::JsonPayloadError(JsonPayloadError::Deserialize(
+                                serde_json::Error::custom("json error"),
+                            )),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+
+                        assert_error_impl_for_path(
+                            ValidationError::UrlEncodedError(UrlencodedError::ContentType),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+
+                        assert_error_impl_for_path(
+                            ValidationError::QsError(serde_qs::Error::custom("qs error")),
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                        );
+                    }
+                }
+            }
+        }
+
+        mod pool {
+            use diesel_async::pooled_connection::deadpool::PoolError;
+
+            use super::*;
+
+            #[test]
+            #[file_parallel(pokedex_env)]
+            fn test_all() {
+                assert_response_error_impl(PoolError::Closed, StatusCode::INTERNAL_SERVER_ERROR);
+            }
+        }
+
+        mod query {
+            use super::*;
+
+            fn assert_response_error_impl_for_query<E>(error: E, expected_status_code: StatusCode)
+            where
+                E: QueryContext<Output = Error>,
+            {
+                assert_response_error_impl(
+                    error.with_query_context(|| "query error"),
+                    expected_status_code,
+                );
+            }
+
+            #[test]
+            #[file_parallel(pokedex_env)]
+            fn test_all() {
+                assert_response_error_impl_for_query(DieselError::NotFound, StatusCode::NOT_FOUND);
+                assert_response_error_impl_for_query(
+                    DieselError::DatabaseError(
+                        DatabaseErrorKind::UniqueViolation,
+                        Box::new(String::from("unique violation")),
+                    ),
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                );
+                assert_response_error_impl_for_query(
+                    DieselError::DatabaseError(
+                        DatabaseErrorKind::CheckViolation,
+                        Box::new(String::from("check violation")),
+                    ),
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                );
+                assert_response_error_impl_for_query(
+                    DieselError::DatabaseError(
+                        DatabaseErrorKind::ForeignKeyViolation,
+                        Box::new(String::from("foreign key violation")),
+                    ),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                );
+                assert_response_error_impl_for_query(
+                    DieselError::BrokenTransactionManager,
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                );
+            }
+        }
+    }
+
+    mod status_code_for_input_errors {
+        use actix_web::error::UrlencodedError;
+        use serde::de;
+        use serde::de::Error as _;
+        use validator::ValidationErrors;
+
+        use super::*;
+
+        fn assert_input_error_status_code<E>(
+            context: InputErrorContext,
+            error: E,
+            expected_status_code: Option<StatusCode>,
+        ) where
+            E: Into<ValidationError>,
         {
-            assert_response_error_impl(
-                error.with_query_context(|| "query error"),
-                expected_status_code,
+            assert_eq!(expected_status_code, status_code_for_input_error(context, &error.into()));
+        }
+
+        #[test]
+        fn test_unprocessable_entity() {
+            assert_input_error_status_code(
+                InputErrorContext::Json,
+                ValidationError::Validate(ValidationErrors::new()),
+                Some(StatusCode::UNPROCESSABLE_ENTITY),
             );
         }
 
         #[test]
-        #[file_parallel(pokedex_env)]
-        fn test_env() {
-            assert_response_error_impl(
-                env::VarError::NotPresent.with_env_var_context(|| "SOME_ENV_VAR not defined"),
-                StatusCode::INTERNAL_SERVER_ERROR,
+        fn test_bad_request() {
+            assert_input_error_status_code(
+                InputErrorContext::Path,
+                ValidationError::Validate(ValidationErrors::new()),
+                Some(StatusCode::BAD_REQUEST),
+            );
+            assert_input_error_status_code(
+                InputErrorContext::Query,
+                ValidationError::Validate(ValidationErrors::new()),
+                Some(StatusCode::BAD_REQUEST),
+            );
+
+            assert_input_error_status_code(
+                InputErrorContext::Query,
+                ValidationError::Deserialize(DeserializeErrors::DeserializeQuery(
+                    serde_urlencoded::de::Error::custom("query error"),
+                )),
+                Some(StatusCode::BAD_REQUEST),
+            );
+            assert_input_error_status_code(
+                InputErrorContext::Json,
+                ValidationError::Deserialize(DeserializeErrors::DeserializeJson(
+                    serde_json::Error::custom("json error"),
+                )),
+                Some(StatusCode::BAD_REQUEST),
+            );
+            assert_input_error_status_code(
+                InputErrorContext::Path,
+                ValidationError::Deserialize(DeserializeErrors::DeserializePath(
+                    de::value::Error::custom("path error"),
+                )),
+                Some(StatusCode::BAD_REQUEST),
+            );
+
+            assert_input_error_status_code(
+                InputErrorContext::Json,
+                ValidationError::JsonPayloadError(JsonPayloadError::ContentType),
+                Some(StatusCode::BAD_REQUEST),
+            );
+            assert_input_error_status_code(
+                InputErrorContext::Json,
+                ValidationError::JsonPayloadError(JsonPayloadError::Deserialize(
+                    serde_json::Error::custom("json error"),
+                )),
+                Some(StatusCode::BAD_REQUEST),
+            );
+
+            assert_input_error_status_code(
+                InputErrorContext::Query,
+                ValidationError::UrlEncodedError(UrlencodedError::ContentType),
+                Some(StatusCode::BAD_REQUEST),
             );
         }
 
-        #[test]
-        #[file_parallel(pokedex_env)]
-        fn test_input() {
-            assert_response_error_impl(
-                actix_web_validator::Error::JsonPayloadError(JsonPayloadError::ContentType),
-                StatusCode::BAD_REQUEST,
-            );
-        }
+        mod other {
+            use super::*;
 
-        #[test]
-        #[file_parallel(pokedex_env)]
-        fn test_pool() {
-            assert_response_error_impl(PoolError::Closed, StatusCode::INTERNAL_SERVER_ERROR);
-        }
+            fn assert_input_error_status_code_none<E>(context: InputErrorContext, error: E)
+            where
+                E: Into<ValidationError>,
+            {
+                assert_input_error_status_code(context, error, None);
+            }
 
-        #[test]
-        #[file_parallel(pokedex_env)]
-        fn test_query() {
-            assert_response_error_impl_for_query(
-                diesel::result::Error::NotFound,
-                StatusCode::NOT_FOUND,
-            );
-            assert_response_error_impl_for_query(
-                diesel::result::Error::DatabaseError(
-                    DatabaseErrorKind::UniqueViolation,
-                    Box::new(String::from("unique violation")),
-                ),
-                StatusCode::BAD_REQUEST,
-            );
-            assert_response_error_impl_for_query(
-                diesel::result::Error::DatabaseError(
-                    DatabaseErrorKind::CheckViolation,
-                    Box::new(String::from("check violation")),
-                ),
-                StatusCode::BAD_REQUEST,
-            );
-            assert_response_error_impl_for_query(
-                diesel::result::Error::DatabaseError(
-                    DatabaseErrorKind::ForeignKeyViolation,
-                    Box::new(String::from("foreign key violation")),
-                ),
-                StatusCode::INTERNAL_SERVER_ERROR,
-            );
-            assert_response_error_impl_for_query(
-                diesel::result::Error::BrokenTransactionManager,
-                StatusCode::INTERNAL_SERVER_ERROR,
-            );
+            mod context {
+                use super::*;
+
+                mod query {
+                    use super::*;
+
+                    fn assert_query_error_status_code_none<E>(error: E)
+                    where
+                        E: Into<ValidationError>,
+                    {
+                        assert_input_error_status_code_none(InputErrorContext::Query, error);
+                    }
+
+                    #[test]
+                    fn test_other() {
+                        assert_query_error_status_code_none(ValidationError::Deserialize(
+                            DeserializeErrors::DeserializeJson(serde_json::Error::custom(
+                                "json error",
+                            )),
+                        ));
+                        assert_query_error_status_code_none(ValidationError::Deserialize(
+                            DeserializeErrors::DeserializePath(de::value::Error::custom(
+                                "path error",
+                            )),
+                        ));
+
+                        assert_query_error_status_code_none(ValidationError::JsonPayloadError(
+                            JsonPayloadError::ContentType,
+                        ));
+                        assert_query_error_status_code_none(ValidationError::JsonPayloadError(
+                            JsonPayloadError::Deserialize(serde_json::Error::custom("json error")),
+                        ));
+                    }
+                }
+
+                mod json {
+                    use super::*;
+
+                    fn assert_json_error_status_code_none<E>(error: E)
+                    where
+                        E: Into<ValidationError>,
+                    {
+                        assert_input_error_status_code_none(InputErrorContext::Json, error);
+                    }
+
+                    #[test]
+                    fn test_other() {
+                        assert_json_error_status_code_none(ValidationError::Deserialize(
+                            DeserializeErrors::DeserializeQuery(
+                                serde_urlencoded::de::Error::custom("query error"),
+                            ),
+                        ));
+                        assert_json_error_status_code_none(ValidationError::Deserialize(
+                            DeserializeErrors::DeserializePath(de::value::Error::custom(
+                                "path error",
+                            )),
+                        ));
+
+                        assert_json_error_status_code_none(ValidationError::UrlEncodedError(
+                            UrlencodedError::ContentType,
+                        ));
+                    }
+                }
+
+                mod path {
+                    use super::*;
+
+                    fn assert_path_error_status_code_none<E>(error: E)
+                    where
+                        E: Into<ValidationError>,
+                    {
+                        assert_input_error_status_code_none(InputErrorContext::Path, error);
+                    }
+
+                    #[test]
+                    fn test_other() {
+                        assert_path_error_status_code_none(ValidationError::Deserialize(
+                            DeserializeErrors::DeserializeQuery(
+                                serde_urlencoded::de::Error::custom("query error"),
+                            ),
+                        ));
+                        assert_path_error_status_code_none(ValidationError::Deserialize(
+                            DeserializeErrors::DeserializeJson(serde_json::Error::custom(
+                                "json error",
+                            )),
+                        ));
+
+                        assert_path_error_status_code_none(ValidationError::JsonPayloadError(
+                            JsonPayloadError::ContentType,
+                        ));
+                        assert_path_error_status_code_none(ValidationError::JsonPayloadError(
+                            JsonPayloadError::Deserialize(serde_json::Error::custom("json error")),
+                        ));
+
+                        assert_path_error_status_code_none(ValidationError::UrlEncodedError(
+                            UrlencodedError::ContentType,
+                        ));
+                    }
+                }
+            }
         }
     }
 
     mod status_code_for_query_errors {
-        use actix_web::http::StatusCode;
-        use diesel::result::DatabaseErrorKind;
-
         use super::*;
 
         fn assert_query_error_status_code<E>(error: E, expected_status_code: Option<StatusCode>)
         where
-            E: Into<diesel::result::Error>,
+            E: Into<DieselError>,
         {
             assert_eq!(expected_status_code, status_code_for_query_error(&error.into()));
         }
 
         #[test]
         fn test_not_found() {
-            assert_query_error_status_code(
-                diesel::result::Error::NotFound,
-                Some(StatusCode::NOT_FOUND),
-            );
+            assert_query_error_status_code(DieselError::NotFound, Some(StatusCode::NOT_FOUND));
         }
 
         #[test]
         fn test_db_errors() {
             assert_query_error_status_code(
-                diesel::result::Error::DatabaseError(
+                DieselError::DatabaseError(
                     DatabaseErrorKind::UniqueViolation,
                     Box::new(String::from("unique violation")),
                 ),
-                Some(StatusCode::BAD_REQUEST),
+                Some(StatusCode::UNPROCESSABLE_ENTITY),
             );
 
             assert_query_error_status_code(
-                diesel::result::Error::DatabaseError(
+                DieselError::DatabaseError(
                     DatabaseErrorKind::CheckViolation,
                     Box::new(String::from("check violation")),
                 ),
-                Some(StatusCode::BAD_REQUEST),
+                Some(StatusCode::UNPROCESSABLE_ENTITY),
             );
 
             assert_query_error_status_code(
-                diesel::result::Error::DatabaseError(
+                DieselError::DatabaseError(
                     DatabaseErrorKind::ForeignKeyViolation,
                     Box::new(String::from("foreign key violation")),
                 ),
@@ -382,7 +854,7 @@ mod tests {
 
         #[test]
         fn test_other() {
-            assert_query_error_status_code(diesel::result::Error::BrokenTransactionManager, None);
+            assert_query_error_status_code(DieselError::BrokenTransactionManager, None);
         }
     }
 
@@ -393,6 +865,8 @@ mod tests {
             use super::*;
 
             mod error_ref {
+                use serial_test::file_serial;
+
                 use super::*;
                 use crate::error::QueryContext;
 
@@ -401,8 +875,7 @@ mod tests {
                     F: FnOnce(&Option<String>),
                 {
                     ServiceEnv::test(env, async {
-                        let error = diesel::result::Error::NotFound
-                            .with_query_context(|| "entity not found");
+                        let error = DieselError::NotFound.with_query_context(|| "entity not found");
                         let error_response: ErrorResponse = (&error).into();
 
                         assert_eq!(StatusCode::NOT_FOUND, error_response.status_code);
@@ -417,9 +890,6 @@ mod tests {
                 }
 
                 mod development {
-                    use assert_matches::assert_matches;
-                    use serial_test::file_serial;
-
                     use super::*;
 
                     #[actix_web::test]
@@ -437,8 +907,6 @@ mod tests {
                 }
 
                 mod production {
-                    use serial_test::file_serial;
-
                     use super::*;
 
                     #[actix_web::test]
@@ -454,25 +922,107 @@ mod tests {
         }
     }
 
-    mod actix_error_handler {
+    mod input_error_handler {
+        use actix_web::error::UrlencodedError;
+        use serde::de;
+        use serde::de::Error as _;
         use serial_test::file_parallel;
+        use validator::ValidationErrors;
 
         use super::*;
-        use crate::error::{EnvVarContext, EnvVarError};
 
-        #[test]
-        #[file_parallel(pokedex_env)]
-        fn test_handler() {
-            let error = EnvVarError::NotFound.with_env_var_context(|| "env var not found");
+        fn test_handler<I, E>(context: InputErrorContext, input_context: I, error: E)
+        where
+            I: InputContext<Output = Error>,
+            E: Into<Error>,
+        {
+            let error = error.into();
 
             let expected_http_response = error.error_response();
-            let actual_http_response = actix_error_handler(error, &()).error_response();
+            let actual_http_response =
+                input_error_handler(context)(input_context, &()).error_response();
 
             let expected_error_response: ErrorResponse =
                 http_response_json_content(expected_http_response);
             let actual_error_response: ErrorResponse =
                 http_response_json_content(actual_http_response);
             assert_eq!(expected_error_response, actual_error_response);
+        }
+
+        macro_rules! test_handler {
+            ($context:expr, $error:expr) => {{
+                let input_context = $error;
+                let error: $crate::Error = $error.with_input_context($context);
+                test_handler($context, input_context, error);
+            }};
+        }
+
+        fn test_handler_for_context(context: InputErrorContext) {
+            test_handler!(context, ValidationError::Validate(ValidationErrors::new()));
+
+            test_handler!(
+                context,
+                ValidationError::Deserialize(DeserializeErrors::DeserializeQuery(
+                    serde_urlencoded::de::Error::custom("query error")
+                ))
+            );
+            test_handler!(
+                context,
+                ValidationError::Deserialize(DeserializeErrors::DeserializeJson(
+                    serde_json::Error::custom("json error")
+                ))
+            );
+            test_handler!(
+                context,
+                ValidationError::Deserialize(DeserializeErrors::DeserializePath(
+                    de::value::Error::custom("path error")
+                ))
+            );
+
+            test_handler!(
+                context,
+                ValidationError::JsonPayloadError(JsonPayloadError::Deserialize(
+                    serde_json::Error::custom("json error")
+                ))
+            );
+            test_handler!(
+                context,
+                ValidationError::JsonPayloadError(JsonPayloadError::ContentType)
+            );
+
+            test_handler!(context, ValidationError::UrlEncodedError(UrlencodedError::ContentType));
+
+            test_handler!(context, ValidationError::QsError(serde_qs::Error::custom("qs error")));
+        }
+
+        mod query {
+            use super::*;
+
+            #[test]
+            #[file_parallel(pokedex_env)]
+            fn test_all() {
+                test_handler_for_context(InputErrorContext::Query);
+            }
+        }
+
+        mod json {
+            use super::*;
+
+            #[test]
+            #[file_parallel(pokedex_env)]
+            fn test_all() {
+                test_handler_for_context(InputErrorContext::Json);
+            }
+        }
+
+        mod path {
+            use super::*;
+
+            #[test]
+            #[file_parallel(pokedex_env)]
+            fn test_all() {
+                test_handler_for_context(InputErrorContext::Path);
+            }
         }
     }
 }

@@ -45,13 +45,14 @@ pub mod services;
 
 use actix_web::web;
 use actix_web::web::ServiceConfig;
-use actix_web_validator::{JsonConfig, PathConfig};
-use api::errors::actix_error_handler;
+use actix_web_validator::{JsonConfig, PathConfig, QueryConfig};
 pub use error::Error;
 pub use error::Result;
 use log::trace;
 
+use crate::api::errors::input_error_handler;
 use crate::db::Pool;
+use crate::error::InputErrorContext;
 
 /// Macro that expands to an [`App`] instance, initialized for our web application.
 ///
@@ -83,6 +84,7 @@ macro_rules! pokedex_app {
             .wrap(actix_web::middleware::Logger::default())
             .app_data($crate::get_json_config())
             .app_data($crate::get_path_config())
+            .app_data($crate::get_query_config())
             .configure($crate::configure_api(&($pool)))
     };
 }
@@ -104,26 +106,39 @@ pub fn configure_api(pool: &Pool) -> impl FnOnce(&mut ServiceConfig) + '_ {
 
 /// Returns the [`JsonConfig`] to use for our service.
 ///
-/// This config will register a custom error handler that will handle deserialization errors
+/// This config will register a custom error handler that will handle input errors
 /// using our [`ResponseError` impl](Error#impl-ResponseError-for-Error).
 ///
 /// # Notes
 ///
-/// This function cannot be generic over the config type, because unfortunately `actix_web`'s
+/// This function cannot be generic over the config type, because unfortunately `actix-web-validator`'s
 /// various config types do not share a common trait that has the `error_handler` method.
 pub fn get_json_config() -> JsonConfig {
-    JsonConfig::default().error_handler(actix_error_handler)
+    JsonConfig::default().error_handler(input_error_handler(InputErrorContext::Json))
 }
 
 /// Returns the [`PathConfig`] to use for our service.
 ///
-/// This config will register a custom error handler that will handle deserialization errors
+/// This config will register a custom error handler that will handle input errors
 /// using our [`ResponseError` impl](Error#impl-ResponseError-for-Error).
 ///
 /// # Notes
 ///
-/// This function cannot be generic over the config type, because unfortunately `actix_web`'s
+/// This function cannot be generic over the config type, because unfortunately `actix-web-validator`'s
 /// various config types do not share a common trait that has the `error_handler` method.
 pub fn get_path_config() -> PathConfig {
-    PathConfig::default().error_handler(actix_error_handler)
+    PathConfig::default().error_handler(input_error_handler(InputErrorContext::Path))
+}
+
+/// Returns the [`QueryConfig`] to use for our service.
+///
+/// This config will register a custom error handler that will handle input errors
+/// using our [`ResponseError` impl](Error#impl-ResponseError-for-Error).
+///
+/// # Notes
+///
+/// This function cannot be generic over the config type, because unfortunately `actix-web-validator`'s
+/// various config types do not share a common trait that has the `error_handler` method.
+pub fn get_query_config() -> QueryConfig {
+    QueryConfig::default().error_handler(input_error_handler(InputErrorContext::Query))
 }
