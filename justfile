@@ -24,8 +24,6 @@ docker-compose-run := if trimmed_toolchain == "nightly" {
   "docker compose run"
 }
 
-open := '--open'
-
 default:
     @just --list
 
@@ -67,7 +65,7 @@ msrv:
     {{ if path_exists("Cargo.lock.bak") == "true" { `just post-msrv` } else { ` ` } }}
 
 doc $RUSTDOCFLAGS="-D warnings":
-    {{cargo}} doc --workspace --all-features {{open}}
+    {{cargo}} doc {{ if env('CI', '') != '' { '--no-deps' } else { '--open' } }} --workspace --all-features
 
 doc-coverage $RUSTDOCFLAGS="-Z unstable-options --show-coverage":
     cargo +nightly doc --no-deps --workspace --all-features
