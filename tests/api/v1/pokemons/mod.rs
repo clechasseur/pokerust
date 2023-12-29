@@ -2,7 +2,9 @@ mod list {
     use actix_web::http::StatusCode;
     use actix_web::test;
     use diesel::insert_into;
+    use diesel::result::Error as DieselError;
     use diesel_async::RunQueryDsl;
+    use pokedex_rs::helpers::db::paginate::{reset_mock_error_producer, set_mock_error_producer};
     use pokedex_rs::services::pokemon::PokemonsPage;
     use serial_test::file_serial;
 
@@ -99,6 +101,44 @@ mod list {
         let result = test::call_service(&service, req).await;
 
         assert_eq!(StatusCode::BAD_REQUEST, result.status());
+    }
+
+    #[test_log::test(actix_web::test)]
+    #[file_serial(api_v1_pokemons)]
+    async fn test_broken_db_connection() {
+        init_test_service!(app, service);
+
+        let result = {
+            set_mock_error_producer(Box::new(|| Some(DieselError::BrokenTransactionManager)));
+
+            let req = test::TestRequest::with_uri("/api/v1/pokemons").to_request();
+            let result = test::call_service(&service, req).await;
+
+            reset_mock_error_producer();
+
+            result
+        };
+
+        assert_eq!(StatusCode::INTERNAL_SERVER_ERROR, result.status());
+    }
+
+    #[test_log::test(actix_web::test)]
+    #[file_serial(api_v1_pokemons)]
+    async fn test_working_db_connection() {
+        init_test_service!(app, service);
+
+        let result = {
+            set_mock_error_producer(Box::new(|| None));
+
+            let req = test::TestRequest::with_uri("/api/v1/pokemons").to_request();
+            let result = test::call_service(&service, req).await;
+
+            reset_mock_error_producer();
+
+            result
+        };
+
+        assert!(result.status().is_success());
     }
 }
 
