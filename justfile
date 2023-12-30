@@ -44,8 +44,8 @@ build *extra_args:
 test *extra_args:
     {{cargo}} test --workspace --all-features {{extra_args}}
 
-tarpaulin:
-    {{cargo}} tarpaulin --target-dir target-tarpaulin
+tarpaulin *extra_args:
+    {{cargo}} tarpaulin --target-dir target-tarpaulin {{extra_args}}
 
 pre-msrv:
     mv Cargo.toml Cargo.toml.bak
