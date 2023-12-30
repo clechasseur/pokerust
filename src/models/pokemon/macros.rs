@@ -114,8 +114,8 @@ macro_rules! implement_pokemon_upsert {
 
             $crate::implement_pokemon_upsert_from! {
                 #[doc = r"
-                    Converts a [`Pokemon`]($crate::models::pokemon::Pokemon) struct into a
-                    [`" $name r"`], dropping its [`id`]($crate::models::pokemon::Pokemon::id).
+                    Converts a [`Pokemon`](crate::models::pokemon::Pokemon) struct into a
+                    [`" $name r"`], dropping its [`id`](crate::models::pokemon::Pokemon::id).
                 "]
                 $crate::models::pokemon::Pokemon => $name
             }
@@ -300,6 +300,23 @@ mod tests {
                 legendary: false,
             };
             assert!(!format!("{:?}", create_pokemon).is_empty());
+
+            let update_pokemon = TestUpdatePokemon {
+                number: 1,
+                name: "Bulbasaur".into(),
+                type_1: "Grass".into(),
+                type_2: Some("Poison".into()),
+                total: 318,
+                hp: 45,
+                attack: 49,
+                defense: 49,
+                sp_atk: 65,
+                sp_def: 65,
+                speed: 45,
+                generation: 1,
+                legendary: false,
+            };
+            assert!(!format!("{:?}", update_pokemon).is_empty());
         }
     }
 
