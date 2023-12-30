@@ -46,6 +46,7 @@ test *extra_args:
 
 tarpaulin *extra_args:
     {{cargo}} tarpaulin --target-dir target-tarpaulin {{extra_args}}
+    {{ if env('CI', '') == '' { `open tarpaulin-report.html` } else { ` ` } }}
 
 pre-msrv:
     mv Cargo.toml Cargo.toml.bak
