@@ -32,6 +32,9 @@ impl TestApp {
                 .replace("5432", "5433")
                 .replace("/pokedex", "/pokedex-test");
             env::set_var("DATABASE_URL", db_url);
+
+            debug!("Setting max pool size for tests");
+            env::set_var("MAX_POOL_SIZE", "4");
         });
 
         debug!("Creating test database connection pool");
