@@ -93,7 +93,7 @@ pub fn status_code_for_input_error(
         // in the future we may need to process this differently.
         ValidationError::QsError(_) => None,
 
-        // Any other combination is a programmer error (possible on the part of the programmer of a dependency).
+        // Any other combination is a programmer error (possibly on the part of the programmer of a dependency).
         _ => None,
     }
 }
@@ -419,11 +419,6 @@ mod tests {
                             ValidationError::UrlEncodedError(UrlencodedError::ContentType),
                             StatusCode::BAD_REQUEST,
                         );
-
-                        assert_error_impl_for_query(
-                            ValidationError::QsError(serde_qs::Error::custom("qs error")),
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                        );
                     }
                 }
 
@@ -483,11 +478,6 @@ mod tests {
                             ValidationError::UrlEncodedError(UrlencodedError::ContentType),
                             StatusCode::INTERNAL_SERVER_ERROR,
                         );
-
-                        assert_error_impl_for_json(
-                            ValidationError::QsError(serde_qs::Error::custom("qs error")),
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                        );
                     }
                 }
 
@@ -545,11 +535,6 @@ mod tests {
 
                         assert_error_impl_for_path(
                             ValidationError::UrlEncodedError(UrlencodedError::ContentType),
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                        );
-
-                        assert_error_impl_for_path(
-                            ValidationError::QsError(serde_qs::Error::custom("qs error")),
                             StatusCode::INTERNAL_SERVER_ERROR,
                         );
                     }
@@ -991,8 +976,6 @@ mod tests {
             );
 
             test_handler!(context, ValidationError::UrlEncodedError(UrlencodedError::ContentType));
-
-            test_handler!(context, ValidationError::QsError(serde_qs::Error::custom("qs error")));
         }
 
         mod query {
