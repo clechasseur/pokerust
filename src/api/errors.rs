@@ -89,10 +89,6 @@ pub fn status_code_for_input_error(
         // Url-encoded errors are caused by faulty input, for which we return 400 Bad Request.
         ValidationError::UrlEncodedError(_) if context.is_query() => Some(StatusCode::BAD_REQUEST),
 
-        // QsError is not possible currently because we do not use `serde_qs` deserialization. If this changes
-        // in the future we may need to process this differently.
-        ValidationError::QsError(_) => None,
-
         // Any other combination is a programmer error (possibly on the part of the programmer of a dependency).
         _ => None,
     }
