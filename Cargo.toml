@@ -50,7 +50,7 @@ strum_macros = "0.25.3"
 thiserror = "1.0.56"
 tokio = { version = "1.35.1", features = ["full"] }
 utoipa = { version = "4.2.0", features = ["actix_extras"] }
-utoipa-rapidoc = { version = "2.0.0", features = ["actix-web"] }
+utoipa-rapidoc = { version = "3.0.0", features = ["actix-web"] }
 utoipa-redoc = { version = "3.0.0", features = ["actix-web"] }
 utoipa-swagger-ui = { version = "6.0.0", features = ["actix-web", "debug-embed"] }
 validator = { version = "0.16.1", features = ["derive"] }
