@@ -26,7 +26,7 @@ jobs:
 
       - name: Check if we need to audit MSRV cargo files
         id: check_msrv_cargo_files
-        uses: andstor/file-existence-action@v2
+        uses: andstor/file-existence-action@v3
         with:
           files: "Cargo.lock.msrv, Cargo.toml.msrv"
 
