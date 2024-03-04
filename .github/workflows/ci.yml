@@ -75,7 +75,7 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
 
       - name: Install just
-        uses: extractions/setup-just@v1
+        uses: extractions/setup-just@v2
 
       - name: Output Rust toolchain info
         run: |
@@ -245,7 +245,7 @@ jobs:
           cache-targets: false
 
       - name: Install just
-        uses: extractions/setup-just@v1
+        uses: extractions/setup-just@v2
 
       - name: Generate doc using rustdoc
         run: just doc
@@ -262,7 +262,7 @@ jobs:
         uses: dtolnay/rust-toolchain@nightly
 
       - name: Install just
-        uses: extractions/setup-just@v1
+        uses: extractions/setup-just@v2
 
       - name: Check doc coverage
         run: just doc-coverage
@@ -278,7 +278,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install just
-        uses: extractions/setup-just@v1
+        uses: extractions/setup-just@v2
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
