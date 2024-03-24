@@ -42,4 +42,8 @@ pub struct IdNotFoundResponse;
 /// Can be used to document 5XX API error responses using [`utoipa::path`].
 #[derive(Debug, IntoResponses)]
 #[response(status = "5XX")]
-pub struct ServerErrorResponse(#[to_response] ErrorResponse);
+pub struct ServerErrorResponse(
+    #[allow(dead_code)]
+    #[to_response]
+    ErrorResponse,
+);
