@@ -1,0 +1,6 @@
+[dependencies]
+lazy_static = "1.4.0"
+tracing = "0.1.40"
+
+[build-dependencies]
+pkg-config = "0.3.30"
