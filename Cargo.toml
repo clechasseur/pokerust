@@ -53,7 +53,7 @@ utoipa = { version = "4.2.0", features = ["actix_extras"] }
 utoipa-rapidoc = { version = "3.0.0", features = ["actix-web"] }
 utoipa-redoc = { version = "3.0.0", features = ["actix-web"] }
 utoipa-swagger-ui = { version = "6.0.0", features = ["actix-web", "debug-embed"] }
-validator = { version = "0.16.1", features = ["derive"] }
+validator = { version = "0.18.0", features = ["derive"] }
 
 [dev-dependencies]
 actix-http = "3.4.0"
