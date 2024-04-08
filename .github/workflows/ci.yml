@@ -24,7 +24,7 @@ jobs:
           components: clippy
 
       - name: Run clippy
-        uses: clechasseur/rs-clippy-check@d76e9da3cd0e64868fdc27e2277268190cd3af59
+        uses: clechasseur/rs-clippy-check@6489db34e7d7a162364f8ee3d7ad2cd1060dc1d7
         with:
           args: --workspace --all-targets ${{ matrix.all-features && '--all-features' || '' }} -- -D warnings
 
