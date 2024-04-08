@@ -134,7 +134,7 @@ jobs:
           down-flags: "--volumes"
 
       - name: Run DB migrations
-        uses: clechasseur/rs-cargo@801899018a9a4558d01dc74fe3943a6e2ae0f98c
+        uses: clechasseur/rs-cargo@060b7ed8caf4a0ae2a780a894042c22584a5451b
         with:
           command: run
           args: --bin run_migrations
@@ -177,13 +177,13 @@ jobs:
           down-flags: "--volumes"
 
       - name: Run DB migrations
-        uses: clechasseur/rs-cargo@801899018a9a4558d01dc74fe3943a6e2ae0f98c
+        uses: clechasseur/rs-cargo@060b7ed8caf4a0ae2a780a894042c22584a5451b
         with:
           command: run
           args: --bin run_migrations
 
       - name: Run cargo-tarpaulin
-        uses: clechasseur/rs-cargo@801899018a9a4558d01dc74fe3943a6e2ae0f98c
+        uses: clechasseur/rs-cargo@060b7ed8caf4a0ae2a780a894042c22584a5451b
         with:
           command: tarpaulin
 
@@ -256,7 +256,7 @@ jobs:
           cache-targets: false
 
       - name: Perform publish dry-run
-        uses: clechasseur/rs-cargo@801899018a9a4558d01dc74fe3943a6e2ae0f98c
+        uses: clechasseur/rs-cargo@060b7ed8caf4a0ae2a780a894042c22584a5451b
         with:
           command: publish
           args: --dry-run
