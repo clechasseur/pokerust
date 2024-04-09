@@ -56,7 +56,7 @@ utoipa-swagger-ui = { version = "6.0.0", features = ["actix-web", "debug-embed"]
 validator = { version = "0.16.1", features = ["derive"] }
 
 [dev-dependencies]
-actix-http = "3.4.0"
+actix-http = "3.6.0"
 assert_matches = "1.5.0"
 mime = "0.3.17"
 serde_urlencoded = "0.7.1"
