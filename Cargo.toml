@@ -25,7 +25,7 @@ targets = [ "x86_64-unknown-linux-gnu" ]
 
 [dependencies]
 anyhow = "1.0.81"
-actix-web = "4.4.1"
+actix-web = "4.5.1"
 actix-web-validator = "5.0.1"
 cargo_metadata = "0.18.1"
 csv = "1.3.0"
