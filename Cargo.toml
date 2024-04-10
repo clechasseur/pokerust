@@ -29,7 +29,7 @@ actix-web = "4.5.1"
 actix-web-validator = "5.0.1"
 cargo_metadata = "0.18.1"
 csv = "1.3.0"
-deadpool = { version = "0.9.5", features = ["rt_tokio_1"] }
+deadpool = { version = "0.11.2", features = ["rt_tokio_1"] }
 diesel = { version = "2.1.5", features = ["postgres", "without-deprecated"] }
 diesel-async = { version = "0.4.1", features = ["deadpool", "postgres"] }
 diesel_derives = { version = "2.1.3", features = ["postgres", "without-deprecated"] }
