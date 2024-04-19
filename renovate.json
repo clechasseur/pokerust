@@ -24,7 +24,7 @@
     },
     {
       "matchManagers": ["cargo"],
-      "matchPackagePatterns": ["^log$", "_logger$", "^test-log$],
+      "matchPackagePatterns": ["^log$", "_logger$", "^test-log$"],
       "groupName": "log crates"
     }
   ]
