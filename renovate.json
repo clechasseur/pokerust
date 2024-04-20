@@ -9,7 +9,7 @@
     },
     {
       "matchManagers": ["cargo"],
-      "matchPackageNames": ["diesel", "deadpool", "diesel-async"],
+      "matchPackageNames": ["diesel", "diesel_derives", "deadpool", "diesel-async"],
       "groupName": "diesel crates"
     },
     {
