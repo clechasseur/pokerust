@@ -37,7 +37,7 @@ cp -r ./seed /bin/seed
 EOF
 
 FROM debian:bookworm-slim AS final
-LABEL org.opencontainers.image.authors="Charles Lechasseur <shiftingbeard@gmx.com>"
+LABEL org.opencontainers.image.authors="Charles Lechasseur <shiftingbeard@outlook.com>"
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libpq5 && \
