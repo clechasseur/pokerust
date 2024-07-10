@@ -1,31 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>clechasseur/renovate-config:renovate"],
-  "packageRules": [
-    {
-      "matchManagers": ["cargo"],
-      "matchPackageNames": ["validator", "actix-web-validator"],
-      "groupName": "validator crates"
-    },
-    {
-      "matchManagers": ["cargo"],
-      "matchPackageNames": ["diesel", "diesel_derives", "deadpool", "diesel-async"],
-      "groupName": "diesel crates"
-    },
-    {
-      "matchManagers": ["cargo"],
-      "matchPackagePrefixes": ["utoipa"],
-      "groupName": "utoipa crates"
-    },
-    {
-      "matchManagers": ["cargo"],
-      "matchPackagePatterns": ["^serde$", "^serde(-|_)", "^csv$"],
-      "groupName": "serde crates"
-    },
-    {
-      "matchManagers": ["cargo"],
-      "matchPackagePatterns": ["^log$", "_logger$", "^test-log$"],
-      "groupName": "log crates"
-    }
-  ]
+  "extends": ["github>clechasseur/renovate-config:renovate"]
 }
