@@ -22,4 +22,4 @@ For more information on development in this project, see the [README](README.md)
 No problem! If it's OK to do this publicly, you can simply [create a discussion](https://github.com/clechasseur/pokerust/discussions/new/choose).
 If you'd rather do this privately, you can use the following contact information to send an email:
 
-Charles Lechasseur \<shiftingbeard@gmx.com\>
+Charles Lechasseur \<shiftingbeard@outlook.com\>
