@@ -15,16 +15,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Install Rust with clippy
-        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc # v1.8.0
+        uses: actions-rust-lang/setup-rust-toolchain@4d1965c9142484e48d40c19de54b5cba84953a06 # v1.10.0
         with:
           toolchain: stable
           components: clippy
+          cache: false
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 # v2.7.3
+        with:
+          prefix-key: v1-rust
+          key: all-features-${{ matrix.all-features }}
+          cache-on-failure: true
 
       - name: Run clippy
-        uses: clechasseur/rs-clippy-check@6489db34e7d7a162364f8ee3d7ad2cd1060dc1d7 # v3.0.3
+        uses: clechasseur/rs-clippy-check@a2a93bdcf05de7909aabd62eca762179ad3dbe50 # v3.0.5
         with:
           args: --workspace --all-targets ${{ matrix.all-features && '--all-features' || '' }} -- -D warnings
 
@@ -33,17 +41,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Install Rust nightly with rustfmt
-        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc # v1.8.0
+        uses: actions-rust-lang/setup-rust-toolchain@4d1965c9142484e48d40c19de54b5cba84953a06 # v1.10.0
         with:
           toolchain: nightly
           components: rustfmt
           cache: false
 
       - name: Run Rustfmt
-        uses: clechasseur/rs-fmt-check@365257820e09c88bfb0c0dc696c250d858831f42 # v2.0.3
+        uses: clechasseur/rs-fmt-check@1a4ebb722c8e8a04f0d2e363c91744f81c968c42 # v2.0.5
         with:
           args: --all
 
@@ -58,31 +66,27 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Install Rust nightly toolchain
-        if: ${{ matrix.toolchain != 'nightly' }}
-        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc # v1.8.0
+      - name: Install Rust nightly and ${{ matrix.toolchain }}
+        uses: actions-rust-lang/setup-rust-toolchain@4d1965c9142484e48d40c19de54b5cba84953a06 # v1.10.0
         with:
-          toolchain: nightly
-          cache: false
-
-      - name: Install Rust toolchain ${{ matrix.toolchain }}
-        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc # v1.8.0
-        with:
-          toolchain: ${{ matrix.toolchain }}
+          toolchain: nightly,${{ matrix.toolchain }}
           cache: false
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 # v2.7.3
         with:
-          prefix-key: v5-rust
+          prefix-key: v7-rust
           key: all-features-${{ matrix.all-features }}-msrv-pins-files-${{ hashFiles('**/msrv-pins.toml') }}
+          cache-on-failure: true
 
       - name: Install required tools
-        uses: taiki-e/install-action@1eda5d19daf935cb04d43ac3bb1b761ec2c8d8f8 # v2.33.8
+        uses: taiki-e/install-action@ae888b48c8777229768754549e5463ba726cb1b3 # v2.44.1
         with:
-          tool: just,cargo-hack,cargo-minimal-versions,cargo-msrv-prep
+          tool: just,cargo-hack,cargo-minimal-versions,cargo-msrv,cargo-msrv-prep
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run checks using cargo-minimal-versions
         run: just all_features=${{ matrix.all-features }} check-minimal
@@ -104,14 +108,14 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Remove Cargo.lock
         if: ${{ matrix.ignore-lock }}
         run: rm Cargo.lock
 
-      - name: Install Rust toolchain ${{ matrix.toolchain }}
-        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc # v1.8.0
+      - name: Install Rust ${{ matrix.toolchain }}
+        uses: actions-rust-lang/setup-rust-toolchain@4d1965c9142484e48d40c19de54b5cba84953a06 # v1.10.0
         with:
           toolchain: ${{ matrix.toolchain }}
           cache: false
@@ -120,13 +124,16 @@ jobs:
         if: ${{ !matrix.experimental }}
         uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 # v2.7.3
         with:
-          prefix-key: v1-rust
+          prefix-key: v2-rust
           key: ignore-lock-${{ matrix.ignore-lock }}-all-features-${{ matrix.all-features }}
+          cache-on-failure: true
 
       - name: Install just
-        uses: taiki-e/install-action@1eda5d19daf935cb04d43ac3bb1b761ec2c8d8f8 # v2.33.8
+        uses: taiki-e/install-action@ae888b48c8777229768754549e5463ba726cb1b3 # v2.44.1
         with:
           tool: just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Start DB containers
         uses: hoverkraft-tech/compose-action@802a148945af6399a338c7906c267331b39a71af # v2.0.0
@@ -153,10 +160,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Install Rust
-        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc # v1.8.0
+        uses: actions-rust-lang/setup-rust-toolchain@4d1965c9142484e48d40c19de54b5cba84953a06 # v1.10.0
         with:
           toolchain: 1.74.1
           cache: false
@@ -164,12 +171,16 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 # v2.7.3
         with:
+          prefix-key: v2-rust
           cache-targets: false
+          cache-on-failure: true
 
       - name: Install cargo-tarpaulin
-        uses: taiki-e/install-action@1eda5d19daf935cb04d43ac3bb1b761ec2c8d8f8 # v2.33.8
+        uses: taiki-e/install-action@ae888b48c8777229768754549e5463ba726cb1b3 # v2.44.1
         with:
           tool: cargo-tarpaulin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Start DB containers
         uses: hoverkraft-tech/compose-action@802a148945af6399a338c7906c267331b39a71af # v2.0.0
@@ -183,18 +194,18 @@ jobs:
           args: --bin run_migrations
 
       - name: Run cargo-tarpaulin
-        uses: clechasseur/rs-cargo@060b7ed8caf4a0ae2a780a894042c22584a5451b # v2.0.3
+        uses: clechasseur/rs-cargo@34eb9ee3e4186e5c7820a54393fbf081f78bc102 # v2.0.5
         with:
           command: tarpaulin
 
       - name: Upload code coverage results to codecov.io
-        uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4.3.0
+        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
       - name: Archive code coverage results
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         with:
           name: code-coverage-report
           path: |
@@ -215,10 +226,10 @@ jobs:
     continue-on-error: ${{ matrix.experimental }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Install Rust toolchain ${{ matrix.toolchain }}
-        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc # v1.8.0
+      - name: Install Rust ${{ matrix.toolchain }}
+        uses: actions-rust-lang/setup-rust-toolchain@4d1965c9142484e48d40c19de54b5cba84953a06 # v1.10.0
         with:
           toolchain: ${{ matrix.toolchain }}
           cache: false
@@ -227,12 +238,16 @@ jobs:
         if: ${{ !matrix.experimental }}
         uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 # v2.7.3
         with:
+          prefix-key: v2-rust
           cache-targets: false
+          cache-on-failure: true
 
       - name: Install just
-        uses: taiki-e/install-action@1eda5d19daf935cb04d43ac3bb1b761ec2c8d8f8 # v2.33.8
+        uses: taiki-e/install-action@ae888b48c8777229768754549e5463ba726cb1b3 # v2.44.1
         with:
           tool: just
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate doc using rustdoc
         run: just doc
@@ -242,10 +257,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Install Rust
-        uses: actions-rust-lang/setup-rust-toolchain@b113a30d27a8e59c969077c0a0168cc13dab5ffc # v1.8.0
+        uses: actions-rust-lang/setup-rust-toolchain@4d1965c9142484e48d40c19de54b5cba84953a06 # v1.10.0
         with:
           toolchain: stable
           cache: false
@@ -253,10 +268,12 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@23bce251a8cd2ffc3c1075eaa2367cf899916d84 # v2.7.3
         with:
+          prefix-key: v2-rust
           cache-targets: false
+          cache-on-failure: true
 
       - name: Perform publish dry-run
-        uses: clechasseur/rs-cargo@060b7ed8caf4a0ae2a780a894042c22584a5451b # v2.0.3
+        uses: clechasseur/rs-cargo@34eb9ee3e4186e5c7820a54393fbf081f78bc102 # v2.0.5
         with:
           command: publish
           args: --dry-run
