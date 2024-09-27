@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG RUST_VERSION=1.73.0
+ARG RUST_VERSION=1.81.0
 ARG RUST_TOOLCHAIN=stable
 ARG APP_NAME=pokedex_rs
 ARG SEED_APP_NAME=seed_db
