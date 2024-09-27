@@ -41,7 +41,7 @@ diesel_migrations = "2.1.0"
 dotenvy = "0.15.7"
 env_logger = "0.10.2"
 log = "0.4.21"
-paste = "1.0.14"
+paste = "1.0.15"
 regex = "1.10.4"
 rustc_version_runtime = "0.3.0"
 serde = { version = "1.0.198", features = ["derive"] }
