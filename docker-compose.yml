@@ -1,5 +1,3 @@
-version: '3.9'
-
 networks:
   pokedex-net:
     driver: bridge
@@ -18,7 +16,7 @@ x-base-service: &base-service
     args:
       - RUST_VERSION
       - RUST_TOOLCHAIN
-  image: clechasseur/pokerust:${RUST_TAG:-1.73.0}
+  image: clechasseur/pokerust:${RUST_TAG:-1.81.0}
   depends_on:
     pokedex-db:
       condition: service_healthy

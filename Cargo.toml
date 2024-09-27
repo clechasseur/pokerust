@@ -1,6 +1,6 @@
 [package]
 name = "pokedex_rs"
-version = "0.2.0"
+version = "0.2.1"
 authors = [ "Charles Lechasseur <shiftingbeard@outlook.com>" ]
 edition = "2021"
 rust-version = "1.70.0"
@@ -22,6 +22,10 @@ include = [ "migrations/**/*", "seed/**/*", "src/**/*", "tests/**/*", "build.rs"
 
 [package.metadata.docs.rs]
 targets = [ "x86_64-unknown-linux-gnu" ]
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = [ "cfg(tarpaulin)", "cfg(tarpaulin_include)", "cfg(backtrace_support)" ]
 
 [dependencies]
 anyhow = "1.0.82"
