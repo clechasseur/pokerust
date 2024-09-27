@@ -30,7 +30,7 @@ x-base-service: &base-service
 
 services:
   pokedex-db:
-    image: postgres:16
+    image: postgres:17
     volumes:
       - pokedex-postgres-data:/var/lib/postgresql/data
     ports:
@@ -47,7 +47,7 @@ services:
       retries: 5
 
   pokedex-db-test:
-    image: postgres:16
+    image: postgres:17
     volumes:
       - pokedex-postgres-test-data:/var/lib/postgresql/data
     ports:
