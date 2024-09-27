@@ -88,8 +88,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Note: there's a problem where running `cargo msrv-prep` with a version of Rust
+      # that's too old to resolve dependencies _before_ we apply the MSRV pins fails.
+      # For now, we'll run `cargo msrv-prep` and `cargo msrv-unprep` using the Nightly
+      # toolchain to work around the issue, but I'll have to think of a better way.
       - name: Run checks using cargo-minimal-versions
-        run: just all_features=${{ matrix.all-features }} check-minimal
+        run: |
+          just toolchain=nightly prep
+          just all_features=${{ matrix.all-features }} _check-minimal-only
+          just _rimraf target-minimal
+          just toolchain=nightly unprep
 
   build:
     name: Build for Rust ${{ matrix.toolchain }}${{ matrix.experimental && ' (experimental)' || '' }} on ${{ matrix.os }}${{ matrix.ignore-lock && ' without Cargo.lock' || '' }}${{ matrix.all-features && ' with all features' || '' }}
