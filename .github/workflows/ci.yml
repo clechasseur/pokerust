@@ -149,7 +149,7 @@ jobs:
           down-flags: "--volumes"
 
       - name: Run DB migrations
-        uses: clechasseur/rs-cargo@060b7ed8caf4a0ae2a780a894042c22584a5451b # v2.0.3
+        uses: clechasseur/rs-cargo@34eb9ee3e4186e5c7820a54393fbf081f78bc102 # v2.0.5
         with:
           command: run
           args: --bin run_migrations
@@ -193,7 +193,7 @@ jobs:
           down-flags: "--volumes"
 
       - name: Run DB migrations
-        uses: clechasseur/rs-cargo@060b7ed8caf4a0ae2a780a894042c22584a5451b # v2.0.3
+        uses: clechasseur/rs-cargo@34eb9ee3e4186e5c7820a54393fbf081f78bc102 # v2.0.5
         with:
           command: run
           args: --bin run_migrations
