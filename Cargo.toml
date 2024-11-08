@@ -64,7 +64,7 @@ actix-http = "3.9.0"
 assert_matches = "1.5.0"
 mime = "0.3.17"
 serde_urlencoded = "0.7.1"
-serial_test = { version = "3.1.1", features = ["file_locks"] }
+serial_test = { version = "3.2.0", features = ["file_locks"] }
 test-log = "0.2.14"
 
 [build-dependencies]
