@@ -52,7 +52,7 @@ simple_logger = "4.3.3"
 strum = { version = "0.26.3", features = ["derive"] }
 strum_macros = "0.26.4"
 thiserror = "1.0.64"
-tokio = { version = "1.40.0", features = ["full"] }
+tokio = { version = "1.42.0", features = ["full"] }
 utoipa = { version = "4.2.0", features = ["actix_extras"] }
 utoipa-rapidoc = { version = "3.0.0", features = ["actix-web"] }
 utoipa-redoc = { version = "3.0.0", features = ["actix-web"] }
